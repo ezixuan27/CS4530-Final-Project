@@ -23,13 +23,13 @@ class Trip {
   });
 
   Trip copyWith({List<String>? memberIds}) => Trip(
-        id: id,
-        name: name,
-        destination: destination,
-        startDate: startDate,
-        endDate: endDate,
-        inviteCode: inviteCode,
-        organizerId: organizerId,
-        memberIds: memberIds ?? this.memberIds,
-      );
+    id: id,
+    name: name,
+    destination: destination,
+    startDate: startDate,
+    endDate: endDate,
+    inviteCode: inviteCode,
+    organizerId: organizerId,
+    memberIds: memberIds ?? this.memberIds,
+  );
 }
