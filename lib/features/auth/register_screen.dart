@@ -13,7 +13,7 @@ class RegisterScreen extends StatelessWidget {
       story: 'Story 1 · Account access',
       owner: 'Member A',
       actions: [
-        PlaceholderAction('Create account', Routes.myTrips, replace: true),
+        PlaceholderAction('Create account', Routes.myTrips, clearStack: true),
       ],
     );
   }

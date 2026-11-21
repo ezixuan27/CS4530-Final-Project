@@ -13,7 +13,7 @@ class SignInScreen extends StatelessWidget {
       story: 'Story 1 · Account access',
       owner: 'Member A',
       actions: [
-        PlaceholderAction('Sign In', Routes.myTrips, replace: true),
+        PlaceholderAction('Sign In', Routes.myTrips, clearStack: true),
         PlaceholderAction('Register', Routes.register),
       ],
     );

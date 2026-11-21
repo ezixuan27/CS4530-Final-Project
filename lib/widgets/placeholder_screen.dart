@@ -6,14 +6,15 @@ class PlaceholderAction {
   final String route;
   final Object? arguments;
 
-  /// Replace the current screen instead of pushing on top (e.g. after sign in).
-  final bool replace;
+  /// Clear the whole back stack before opening [route] (sign in / sign out),
+  /// so the back button can't return to the screen we came from.
+  final bool clearStack;
 
   const PlaceholderAction(
     this.label,
     this.route, {
     this.arguments,
-    this.replace = false,
+    this.clearStack = false,
   });
 }
 
@@ -66,10 +67,11 @@ class PlaceholderScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: FilledButton(
-                    onPressed: () => action.replace
-                        ? Navigator.pushReplacementNamed(
+                    onPressed: () => action.clearStack
+                        ? Navigator.pushNamedAndRemoveUntil(
                             context,
                             action.route,
+                            (_) => false,
                             arguments: action.arguments,
                           )
                         : Navigator.pushNamed(
