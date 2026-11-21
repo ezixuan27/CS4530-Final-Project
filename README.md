@@ -69,6 +69,12 @@ Each member owns their features end to end: screen, ViewModel, repository, and t
 
 **10-second sync (NFR):** "Each saved change must appear on every other trip member's device within 10 seconds." With Firestore this is mostly free *if* screens listen for live updates (`snapshots()` → `Stream`) instead of loading once (`get()`). Each owner does this for their own data and checks it with two devices or emulators.
 
+Listening is cheap. Firestore bills per document *read*, not per minute: the first snapshot reads the matching documents once, then each change costs one read per listener. That's far cheaper than re-fetching with `get()` every few seconds, and a class project stays well inside the free tier. To avoid wasted reads:
+
+- Start the listener in the ViewModel, once. Never in `build()`, which runs on every rebuild.
+- Cancel the subscription in the ViewModel's `dispose()`.
+- Listen only to this trip's data (e.g. `trips/{tripId}/expenses`), not a whole top-level collection.
+
 ### A · Accounts, trips, backend
 
 **Story 1 · Account access.** *Purpose:* only signed-in travelers can see their trips.
