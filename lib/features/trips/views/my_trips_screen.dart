@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../data/auth_service.dart';
-import '../../data/trip_repository.dart';
-import '../../models/trip.dart';
-import '../../routes.dart';
+import '../../../data/auth_service.dart';
+import '../../../data/trip_repository.dart';
+import '../../../models/trip.dart';
+import '../../../routes.dart';
 
 /// Story 6 · Reopen the plan (Member B).
 /// Lists the trips the signed-in user created or joined. Minimal version:

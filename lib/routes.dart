@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-import 'features/auth/register_screen.dart';
-import 'features/auth/sign_in_screen.dart';
-import 'features/expenses/expenses_screen.dart';
-import 'features/itinerary/itinerary_screen.dart';
-import 'features/itinerary/review_suggestions_screen.dart';
-import 'features/itinerary/suggest_change_screen.dart';
-import 'features/trips/create_trip_screen.dart';
-import 'features/trips/join_trip_screen.dart';
-import 'features/trips/my_trips_screen.dart';
-import 'features/voting/vote_activity_screen.dart';
+import 'features/auth/views/register_screen.dart';
+import 'features/auth/views/sign_in_screen.dart';
+import 'features/expenses/views/expenses_screen.dart';
+import 'features/itinerary/views/itinerary_screen.dart';
+import 'features/itinerary/views/review_suggestions_screen.dart';
+import 'features/itinerary/views/suggest_change_screen.dart';
+import 'features/trips/views/create_trip_screen.dart';
+import 'features/trips/views/join_trip_screen.dart';
+import 'features/trips/views/my_trips_screen.dart';
+import 'features/voting/views/vote_activity_screen.dart';
 
 /// Route names. Trip-scoped screens receive the trip id (String) as the
 /// route argument: `Navigator.pushNamed(context, Routes.itinerary, arguments: tripId)`.

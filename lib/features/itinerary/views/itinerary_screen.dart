@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../routes.dart';
-import '../../widgets/placeholder_screen.dart';
+import '../../../routes.dart';
+import '../../../widgets/placeholder_screen.dart';
 
 class ItineraryScreen extends StatelessWidget {
   const ItineraryScreen({super.key});

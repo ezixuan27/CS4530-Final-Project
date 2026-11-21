@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/placeholder_screen.dart';
+import '../../../widgets/placeholder_screen.dart';
 
 class SuggestChangeScreen extends StatelessWidget {
   const SuggestChangeScreen({super.key});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../widgets/placeholder_screen.dart';
+import '../../../widgets/placeholder_screen.dart';
 
 class JoinTripScreen extends StatelessWidget {
   const JoinTripScreen({super.key});
