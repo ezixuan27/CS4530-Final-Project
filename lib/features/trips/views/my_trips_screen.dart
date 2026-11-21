@@ -6,9 +6,8 @@ import '../../../data/trip_repository.dart';
 import '../../../routes.dart';
 import '../view_models/my_trips_view_model.dart';
 
-/// Story 6 · Reopen the plan (Member B).
-/// Lists the trips the signed-in user created or joined. Minimal version:
-/// Member B owns the real design.
+/// Story 6 · Reopen the plan (Member A).
+/// Lists the trips the signed-in user created or joined.
 class MyTripsScreen extends StatelessWidget {
   const MyTripsScreen({super.key});
 
