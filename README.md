@@ -75,7 +75,7 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 - Cancel the subscription in the ViewModel's `dispose()`.
 - Listen only to this trip's data (e.g. `trips/{tripId}/expenses`), not a whole top-level collection.
 
-### A · Accounts, trips, backend
+### Rose · Accounts, trips, backend
 
 **Story 1 · Account access.** *Purpose:* only signed-in travelers can see their trips.
 - Register with email + password, sign in, sign out. Show loading and error states (wrong password, email already used).
@@ -102,7 +102,7 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 - [ ] `FirestoreTripRepository` implementing `TripRepository`. Store roles (organizer / member).
 - [ ] Provide every repository in `app.dart`. Write a short "how to add your Firestore repository" note for B and C.
 
-### B · Itinerary and suggestions
+### Marina · Itinerary and suggestions
 
 **Story 5 · Manage the itinerary.** *Purpose:* the organizer keeps one agreed plan everyone follows.
 - Everyone sees the itinerary: items with title, time, place (e.g. "Colosseum · 9 AM · North gate"). The organizer can add, edit, and delete items and approve or decline suggestions.
@@ -119,7 +119,7 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 - [ ] `FirestoreItineraryRepository` with live updates
 - [ ] Firestore rules: only the organizer can edit the itinerary and approve or decline
 
-### C · Polls and expenses
+### Ella · Polls and expenses
 
 **Story 7 · Choose an activity.** *Purpose:* the group sees which activity people prefer, not 40 chat messages.
 - The organizer posts a poll with options (e.g. Vatican Museums, Cooking class). Members pick one and vote, and can see the results.
