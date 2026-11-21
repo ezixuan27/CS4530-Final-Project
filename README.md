@@ -57,9 +57,9 @@ Each member owns their features end to end: screen, ViewModel, repository, and t
 
 | Member | Stories | Folders |
 |---|---|---|
-| A | 1 Account access, 2 Create and invite, 3 Join a trip, 6 Reopen the plan (My Trips) + backend setup | `features/auth/`, `features/trips/`, `data/` |
-| B | 4 Suggest a change, 5 Manage the itinerary (incl. the itinerary view reached from My Trips) | `features/itinerary/` |
-| C | 7 Choose an activity, 8 Track expenses | `features/voting/`, `features/expenses/` |
+| Rose | 1 Account access, 2 Create and invite, 3 Join a trip, 6 Reopen the plan (My Trips) + backend setup | `features/auth/`, `features/trips/`, `data/` |
+| Marina | 4 Suggest a change, 5 Manage the itinerary (incl. the itinerary view reached from My Trips) | `features/itinerary/` |
+| Ella | 7 Choose an activity, 8 Track expenses | `features/voting/`, `features/expenses/` |
 
 **Agree on these first:** once a trip is open, every module gets the same three things. Until A's backend is ready, B and C can build against the in-memory fakes with these values.
 
