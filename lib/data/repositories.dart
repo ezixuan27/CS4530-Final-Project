@@ -1,3 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import '../features/expenses/data/expense_repository.dart';
+import '../features/expenses/data/firestore_expense_repository.dart';
+import '../features/expenses/data/in_memory_expense_repository.dart';
 import 'firestore_trip_repository.dart';
 import 'in_memory_trip_repository.dart';
 import 'trip_repository.dart';
@@ -14,18 +19,18 @@ import 'trip_repository.dart';
 /// README.
 class Repositories {
   final TripRepository trips;
-  // Add yours here, e.g.
-  // final ExpenseRepository expenses;
+  final ExpenseRepository expenses;
 
-  Repositories({
-    TripRepository? trips,
-    // ExpenseRepository? expenses,
-  }) : trips = trips ?? InMemoryTripRepository();
-  // , expenses = expenses ?? InMemoryExpenseRepository();
+  Repositories({TripRepository? trips, ExpenseRepository? expenses})
+    : trips = trips ?? InMemoryTripRepository(),
+      expenses = expenses ?? InMemoryExpenseRepository();
 
   /// The Firestore-backed versions. Call only after `Firebase.initializeApp`.
-  factory Repositories.firestore() => Repositories(
-    trips: FirestoreTripRepository(),
-    // expenses: FirestoreExpenseRepository(),
-  );
+  factory Repositories.firestore() {
+    final db = FirebaseFirestore.instance;
+    return Repositories(
+      trips: FirestoreTripRepository(firestore: db),
+      expenses: FirestoreExpenseRepository(db),
+    );
+  }
 }

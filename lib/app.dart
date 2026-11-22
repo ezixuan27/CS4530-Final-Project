@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'data/auth_service.dart';
 import 'data/repositories.dart';
 import 'data/trip_repository.dart';
+import 'features/expenses/data/expense_repository.dart';
 import 'routes.dart';
 
 class TripSyncApp extends StatelessWidget {
@@ -24,7 +25,7 @@ class TripSyncApp extends StatelessWidget {
       providers: [
         Provider<AuthService>.value(value: auth),
         Provider<TripRepository>.value(value: repositories.trips),
-        // Provider<ExpenseRepository>.value(value: repositories.expenses),
+        Provider<ExpenseRepository>.value(value: repositories.expenses),
       ],
       child: MaterialApp(
         title: 'TripSync',
