@@ -7,7 +7,14 @@ class Expense {
   /// Whole cents (4800 = €48.00). Integers avoid floating-point rounding drift.
   final int amountInCents;
 
+  /// User id of whoever paid.
   final String paidBy;
+
+  /// Payer's display name, stored with the expense so the list can show
+  /// "Paid by Ben" without looking the user up.
+  final String paidByName;
+
+  final DateTime createdAt;
 
   const Expense({
     required this.id,
@@ -15,5 +22,7 @@ class Expense {
     required this.description,
     required this.amountInCents,
     required this.paidBy,
+    required this.paidByName,
+    required this.createdAt,
   });
 }
