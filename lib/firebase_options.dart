@@ -1,6 +1,6 @@
 // Firebase config for the CS4530FinalProject Firebase project.
-// Same shape `flutterfire configure` generates; values come from
-// ios/Runner/GoogleService-Info.plist. The app is iOS only.
+// Same shape `flutterfire configure` generates; values come from the iOS app
+// registered in the Firebase console. The app is iOS only.
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
