@@ -125,9 +125,10 @@ class FirestoreTripRepository implements TripRepository {
   }
 
   @override
-  Stream<List<Trip>> watchTripsForUser(String userId) => _tripsForUserQuery(
-    userId,
-  ).snapshots().map((snap) => snap.docs.map(_fromDoc).toList());
+  Stream<List<Trip>> watchTripsForUser(String userId) =>
+      _tripsForUserQuery(userId)
+          .snapshots()
+          .map((snap) => snap.docs.map(_fromDoc).toList());
 
   @override
   Stream<Trip?> watchTrip(String id) => _trips

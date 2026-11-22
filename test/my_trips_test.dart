@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:final_project/app.dart';
 import 'package:final_project/data/auth_service.dart';
 import 'package:final_project/data/in_memory_trip_repository.dart';
+import 'package:final_project/data/repositories.dart';
 
 void main() {
   Future<InMemoryTripRepository> seededRepo() async {
@@ -38,7 +39,9 @@ void main() {
     WidgetTester tester,
     InMemoryTripRepository repo,
   ) async {
-    await tester.pumpWidget(TripSyncApp(repository: repo));
+    await tester.pumpWidget(
+      TripSyncApp(repositories: Repositories(trips: repo)),
+    );
     await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
     await tester.pumpAndSettle();
   }
