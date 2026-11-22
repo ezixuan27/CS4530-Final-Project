@@ -55,9 +55,11 @@ The app is connected to the **CS4530FinalProject** Firebase project (iOS only). 
 **Firestore layout** (add your collections here when you write your repository):
 
 ```
-trips/{tripId}       name, destination, startDate, endDate (Timestamp),
-                     inviteCode, organizerId, memberIds, createdAt
-inviteCodes/{code}   tripId    # lets a non-member turn a code into a trip id
+trips/{tripId}                        name, destination, startDate, endDate (Timestamp),
+                                      inviteCode, organizerId, memberIds, createdAt
+trips/{tripId}/expenses/{expenseId}   description, amountInCents, paidBy, paidByName,
+                                      createdAt
+inviteCodes/{code}                    tripId    # lets a non-member turn a code into a trip id
 ```
 
 **Roles:** `organizerId` is the trip's organizer; `memberIds` is everyone in the trip, organizer included. Check a role with `trip.roleOf(currentUserId)`, which returns `TripRole.organizer`, `TripRole.member`, or `null` if the user isn't in the trip.
@@ -66,63 +68,23 @@ Until Firebase Auth replaces the `AuthService` stub, every trip is saved under t
 
 ### Adding your Firestore repository
 
-Example for expenses; swap in your feature's names. `lib/data/firestore_trip_repository.dart` is a full working example.
+**Copy the expenses feature.** `lib/features/expenses/` is a complete working example: repository, ViewModel, screen, and tests. Swap in your feature's names (`ItineraryRepository`, `PollRepository`, ...).
 
 **1. Three files in `features/<feature>/data/`:**
-- `expense_repository.dart`: the interface. Use `Future` for actions and a `Stream` for anything a screen displays, so it updates live (10-second sync):
-  ```dart
-  abstract class ExpenseRepository {
-    Stream<List<Expense>> watchExpenses(String tripId);
-    Future<void> addExpense(String tripId, {required String description, required int amountInCents, required String paidBy});
-  }
-  ```
-- `in_memory_expense_repository.dart`: keeps data in a `Map`; tests use it. `InMemoryTripRepository._watch` shows how to make its streams update.
-- `firestore_expense_repository.dart`: the real one.
-  ```dart
-  class FirestoreExpenseRepository implements ExpenseRepository {
-    FirestoreExpenseRepository({FirebaseFirestore? firestore})
-      : _db = firestore ?? FirebaseFirestore.instance;
-    final FirebaseFirestore _db;
 
-    // Under the trip, so a listener only reads this trip's expenses.
-    CollectionReference<Map<String, dynamic>> _expenses(String tripId) =>
-        _db.collection('trips').doc(tripId).collection('expenses');
+| File | What it is | Expenses example |
+|---|---|---|
+| `<x>_repository.dart` | The interface. `Future` for actions, `Stream` for anything a screen shows, so it updates live (10-second sync). | `expense_repository.dart` |
+| `in_memory_<x>_repository.dart` | Data in a list or map. Tests and `Repositories()` use it. | `in_memory_expense_repository.dart` |
+| `firestore_<x>_repository.dart` | The real one. Store data under the trip (`trips/{tripId}/<x>`) so a listener only reads that trip. Convert Firestore maps to models inside this file; dates as `Timestamp`, money as `int` cents. | `firestore_expense_repository.dart` |
 
-    @override
-    Stream<List<Expense>> watchExpenses(String tripId) => _expenses(tripId)
-        .snapshots()
-        .map((snap) => snap.docs.map((doc) => _fromDoc(tripId, doc)).toList());
+**2. Register it** in two places (copy the `expenses` lines):
+- `lib/data/repositories.dart`: add a field, an in-memory default in the constructor, and the Firestore version in `Repositories.firestore()`.
+- `lib/app.dart`: add `Provider<XRepository>.value(value: repositories.x)` to the providers list.
 
-    @override
-    Future<void> addExpense(String tripId, {required String description, required int amountInCents, required String paidBy}) =>
-        _expenses(tripId).add({
-          'description': description,
-          'amountInCents': amountInCents,
-          'paidBy': paidBy,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+**3. Use it:** the view passes `context.read<XRepository>()` into its ViewModel. The ViewModel listens to the stream once and cancels in `dispose()`, like `ExpenseViewModel` (see "10-second sync" below).
 
-    Expense _fromDoc(String tripId, DocumentSnapshot<Map<String, dynamic>> doc) {
-      final data = doc.data()!;
-      return Expense(
-        id: doc.id,
-        tripId: tripId,
-        description: data['description'] as String,
-        amountInCents: data['amountInCents'] as int,
-        paidBy: data['paidBy'] as String,
-      );
-    }
-  }
-  ```
-  Convert between Firestore maps and models inside the repository (models stay plain fields). Store dates as `Timestamp`, money as `int` cents.
-
-**2. Register it** in two places:
-- `lib/data/repositories.dart`: add a field, an in-memory default in the constructor, and the Firestore version in `Repositories.firestore()`. The commented-out `expenses` lines show where.
-- `lib/app.dart`: add `Provider<ExpenseRepository>.value(value: repositories.expenses)` to the providers list.
-
-**3. Use it:** the view passes `context.read<ExpenseRepository>()` into its ViewModel. The ViewModel listens to `watchExpenses(tripId)` once and cancels in `dispose()` (see "10-second sync" below).
-
-**4. Test it:** `TripSyncApp()` and `Repositories()` use in-memory versions by default. Pass your own to seed data: `Repositories(expenses: seededRepo)`.
+**4. Test it:** `TripSyncApp()` and `Repositories()` use the in-memory versions by default. Pass your own to seed data, e.g. `TripSyncApp(repositories: Repositories(expenses: seededRepo))`. For the Firestore version, use `FakeFirebaseFirestore` like `test/features/expenses/expense_repository_test.dart`.
 
 **5. Document it:** add your collection to the Firestore layout above.
 
