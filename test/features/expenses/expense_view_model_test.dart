@@ -64,10 +64,7 @@ void main() {
     });
 
     test('addExpense saves with the current user as payer', () async {
-      final error = await vm.addExpense(
-        description: ' Tickets ',
-        amount: '48',
-      );
+      final error = await vm.addExpense(description: ' Tickets ', amount: '48');
       await Future<void>.delayed(Duration.zero);
 
       expect(error, isNull);
