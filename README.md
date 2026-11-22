@@ -21,8 +21,9 @@ lib/
   models/                   # plain data classes (fields only)
   data/                     # shared Model layer
     auth_service.dart               # current signed-in user (stub: test user)
-    trip_repository.dart            # trips: create / join / look up
-    in_memory_trip_repository.dart  # temporary fake (no database yet)
+    trip_repository.dart            # trips: create / join / look up / watch
+    firestore_trip_repository.dart  # real version, used by the app
+    in_memory_trip_repository.dart  # in-memory version, used by tests
   widgets/placeholder_screen.dart   # temporary scaffold; replace as you build
   features/<feature>/
     views/                  # screens (View)
@@ -46,9 +47,24 @@ Placeholder screens don't have a ViewModel yet. Add one when you build the scree
 - `TripRepository` covers trips only. For itinerary, polls, or expenses, add your own repository (interface + in-memory fake) in `features/<feature>/data/`, e.g. `features/expenses/data/expense_repository.dart`, and register its provider in `app.dart`. That way we don't all edit the same file.
 - Money is stored as integer cents (`Expense.amountInCents`), not `double`.
 
+## Firebase
+
+The app is connected to the **CS4530FinalProject** Firebase project (iOS only). `main.dart` initializes Firebase and uses `FirestoreTripRepository`. Tests build `TripSyncApp` with in-memory repositories, so they never touch the database.
+
+**Firestore layout** (add your collections here when you write your repository):
+
+```
+trips/{tripId}       name, destination, startDate, endDate (Timestamp),
+                     inviteCode, organizerId, memberIds, createdAt
+inviteCodes/{code}   tripId    # lets a non-member turn a code into a trip id
+```
+
+**Roles:** `organizerId` is the trip's organizer; `memberIds` is everyone in the trip, organizer included. Check a role with `trip.roleOf(currentUserId)`, which returns `TripRole.organizer`, `TripRole.member`, or `null` if the user isn't in the trip.
+
+Until Firebase Auth replaces the `AuthService` stub, every trip is saved under the test user `u1`. Firestore is in test mode (open to anyone); switch to real rules once sign-in works.
+
 ## Decided, not done yet
 
-- **Database: Firebase.** The setup isn't decided yet. Because Views and ViewModels only use repository interfaces, switching means writing a Firebase version of each repository (e.g. `FirebaseTripRepository`) and swapping it in `main.dart`. Views and ViewModels stay unchanged. Member A sets up the shared Firebase project and Firebase Auth (which replaces the `AuthService` stub), and each member writes the Firebase version of their own repository (see "Who owns what").
 - **Routing:** built-in named routes for now. Consider `go_router` if we need auth redirects once Firebase Auth is in.
 
 ## Who owns what
@@ -65,7 +81,7 @@ Each member owns their features end to end: screen, ViewModel, repository, and t
 
 - `currentUserId`: `AuthService.currentUser.id`
 - `tripId`: the route argument (`ModalRoute.of(context)!.settings.arguments as String`)
-- the user's role in the trip: organizer if `trip.organizerId == currentUserId`, otherwise member
+- the user's role in the trip: `trip.roleOf(currentUserId)` (`TripRole.organizer` or `TripRole.member`)
 
 **10-second sync (NFR):** "Each saved change must appear on every other trip member's device within 10 seconds." With Firestore this is mostly free *if* screens listen for live updates (`snapshots()` → `Stream`) instead of loading once (`get()`). Each owner does this for their own data and checks it with two devices or emulators.
 
@@ -98,8 +114,9 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 - [ ] Trip overview with entries to Itinerary, Polls, Expenses
 
 **Backend setup.**
-- [ ] Create the Firebase project, add `firebase_core`, initialize in `main.dart`
-- [ ] `FirestoreTripRepository` implementing `TripRepository`. Store roles (organizer / member).
+- [x] Create the Firebase project, add `firebase_core`, initialize in `main.dart`
+- [x] `FirestoreTripRepository` implementing `TripRepository`. Store roles (organizer / member).
+- [ ] Tests for `FirestoreTripRepository` (e.g. with `fake_cloud_firestore`)
 - [ ] Provide every repository in `app.dart`. Write a short "how to add your Firestore repository" note for B and C.
 
 ### Marina · Itinerary and suggestions

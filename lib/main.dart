@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
-import 'data/in_memory_trip_repository.dart';
+import 'data/firestore_trip_repository.dart';
 import 'features/expenses/data/firestore_expense_repository.dart';
 import 'firebase_options.dart';
 
@@ -13,10 +13,11 @@ Future<void> main() async {
 
   final db = FirebaseFirestore.instance;
 
-  // Swap InMemoryTripRepository for a Firebase-backed one later.
+  // The real app uses Firestore. Tests build TripSyncApp with
+  // in-memory repositories, so they never touch the database.
   runApp(
     TripSyncApp(
-      repository: InMemoryTripRepository(),
+      repository: FirestoreTripRepository(firestore: db),
       expenseRepository: FirestoreExpenseRepository(db),
     ),
   );
