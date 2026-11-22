@@ -22,4 +22,11 @@ abstract class TripRepository {
   Future<Trip?> joinTrip(String inviteCode, String userId);
 
   Future<Trip?> tripById(String id);
+
+  /// Live version of [tripsForUser]: emits the current list, then again
+  /// whenever one of the user's trips changes (10-second sync NFR).
+  Stream<List<Trip>> watchTripsForUser(String userId);
+
+  /// Live version of [tripById]: emits null if the trip doesn't exist.
+  Stream<Trip?> watchTrip(String id);
 }
