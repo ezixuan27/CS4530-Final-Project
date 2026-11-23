@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project/data/auth_service.dart';
+import 'package:final_project/data/in_memory_auth_service.dart';
 import 'package:final_project/data/in_memory_trip_repository.dart';
 import 'package:final_project/features/trips/view_models/my_trips_view_model.dart';
 
@@ -18,7 +19,7 @@ void main() {
 
   setUp(() {
     repo = InMemoryTripRepository();
-    vm = MyTripsViewModel(repository: repo, auth: AuthService());
+    vm = MyTripsViewModel(repository: repo, auth: InMemoryAuthService());
   });
 
   test('starts loading with no trips', () {

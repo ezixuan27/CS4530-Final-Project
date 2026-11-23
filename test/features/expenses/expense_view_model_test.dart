@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project/data/auth_service.dart';
+import 'package:final_project/data/in_memory_auth_service.dart';
 import 'package:final_project/features/expenses/data/in_memory_expense_repository.dart';
 import 'package:final_project/features/expenses/view_models/expense_view_model.dart';
 
@@ -42,7 +43,7 @@ void main() {
       repo = InMemoryExpenseRepository();
       vm = ExpenseViewModel(
         repository: repo,
-        auth: AuthService(),
+        auth: InMemoryAuthService(),
         tripId: 'trip1',
       );
     });
@@ -53,7 +54,7 @@ void main() {
       // Fresh VM: setUp's VM already got its first emission before the test.
       final fresh = ExpenseViewModel(
         repository: repo,
-        auth: AuthService(),
+        auth: InMemoryAuthService(),
         tripId: 'trip1',
       );
       expect(fresh.isLoading, isTrue);

@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project/data/auth_service.dart';
+import 'package:final_project/data/in_memory_auth_service.dart';
 import 'package:final_project/data/in_memory_trip_repository.dart';
 import 'package:final_project/features/voting/data/in_memory_poll_repository.dart';
 import 'package:final_project/features/voting/view_models/poll_view_model.dart';
@@ -45,7 +46,7 @@ void main() {
       final vm = PollViewModel(
         polls: polls,
         trips: trips,
-        auth: AuthService(),
+        auth: InMemoryAuthService(),
         tripId: tripId,
       );
       vms.add(vm);
