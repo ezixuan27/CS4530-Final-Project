@@ -59,6 +59,8 @@ trips/{tripId}                        name, destination, startDate, endDate (Tim
                                       inviteCode, organizerId, memberIds, createdAt
 trips/{tripId}/expenses/{expenseId}   description, amountInCents, paidBy, paidByName,
                                       createdAt
+trips/{tripId}/polls/{pollId}         question, options, votes {userId: option},
+                                      createdBy, createdAt
 inviteCodes/{code}                    tripId    # lets a non-member turn a code into a trip id
 ```
 
@@ -165,16 +167,16 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 
 **Story 7 · Choose an activity.** *Purpose:* the group sees which activity people prefer, not 40 chat messages.
 - The organizer posts a poll with options (e.g. Vatican Museums, Cooking class). Members pick one and vote, and can see the results.
-- [ ] `PollRepository` (interface + in-memory fake) in `features/voting/data/`
-- [ ] `PollViewModel` + view: create poll (organizer), vote (one vote per member, can change it), show counts
+- [x] `PollRepository` (interface + in-memory fake) in `features/voting/data/`
+- [x] `PollViewModel` + view: create poll (organizer), vote (one vote per member, can change it), show counts
 
 **Story 8 · Track expenses.** *Purpose:* everyone can see who paid for what.
 - Add an expense with description, amount, and payer, and show a list like "Tickets · €48 · Paid by Ben". Amounts are integer cents. No splitting or who-owes-whom (not in the FR).
-- [ ] `ExpenseRepository` (interface + in-memory fake) in `features/expenses/data/`
-- [ ] `ExpenseViewModel` + view: add form (amount > 0, description required), list for `tripId`
+- [x] `ExpenseRepository` (interface + in-memory fake) in `features/expenses/data/`
+- [x] `ExpenseViewModel` + view: add form (amount > 0, description required), list for `tripId`
 
 **Shared with backend.**
-- [ ] `FirestorePollRepository`, `FirestoreExpenseRepository` with live updates
+- [x] `FirestorePollRepository`, `FirestoreExpenseRepository` with live updates
 - [ ] Firestore rules: only the organizer posts polls. Members of the trip can vote and add expenses.
 
 Shared files (`routes.dart`, `models/`, `data/`): keep changes small and mention them in your PR.
