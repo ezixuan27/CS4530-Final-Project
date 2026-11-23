@@ -3,6 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../features/expenses/data/expense_repository.dart';
 import '../features/expenses/data/firestore_expense_repository.dart';
 import '../features/expenses/data/in_memory_expense_repository.dart';
+import '../features/voting/data/firestore_poll_repository.dart';
+import '../features/voting/data/in_memory_poll_repository.dart';
+import '../features/voting/data/poll_repository.dart';
 import 'firestore_trip_repository.dart';
 import 'in_memory_trip_repository.dart';
 import 'trip_repository.dart';
@@ -20,10 +23,15 @@ import 'trip_repository.dart';
 class Repositories {
   final TripRepository trips;
   final ExpenseRepository expenses;
+  final PollRepository polls;
 
-  Repositories({TripRepository? trips, ExpenseRepository? expenses})
-    : trips = trips ?? InMemoryTripRepository(),
-      expenses = expenses ?? InMemoryExpenseRepository();
+  Repositories({
+    TripRepository? trips,
+    ExpenseRepository? expenses,
+    PollRepository? polls,
+  }) : trips = trips ?? InMemoryTripRepository(),
+       expenses = expenses ?? InMemoryExpenseRepository(),
+       polls = polls ?? InMemoryPollRepository();
 
   /// The Firestore-backed versions. Call only after `Firebase.initializeApp`.
   factory Repositories.firestore() {
@@ -31,6 +39,7 @@ class Repositories {
     return Repositories(
       trips: FirestoreTripRepository(firestore: db),
       expenses: FirestoreExpenseRepository(db),
+      polls: FirestorePollRepository(db),
     );
   }
 }
