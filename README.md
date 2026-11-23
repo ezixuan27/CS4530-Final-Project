@@ -20,7 +20,9 @@ lib/
   routes.dart               # all route names + route table
   models/                   # plain data classes (fields only)
   data/                     # shared Model layer
-    auth_service.dart               # current signed-in user (stub: test user)
+    auth_service.dart               # sign in / register / sign out + current user
+    firebase_auth_service.dart      # real version (Firebase Auth), used by the app
+    in_memory_auth_service.dart     # in-memory version, used by tests
     repositories.dart               # every repository in one object (Firestore or in-memory)
     trip_repository.dart            # trips: create / join / look up / watch
     firestore_trip_repository.dart  # real version, used by the app
@@ -42,7 +44,7 @@ Placeholder screens don't have a ViewModel yet. Add one when you build the scree
 
 **Conventions:**
 
-- Get the signed-in user from `AuthService.currentUser` (pass `AuthService` into your ViewModel). It's a stub that always returns a test user until real sign-in is built (Member A). Don't hardcode user ids.
+- Get the signed-in user from `AuthService.currentUser` (pass `AuthService` into your ViewModel). Don't hardcode user ids.
 - Trip-scoped screens get the trip id as the route argument:
   `Navigator.pushNamed(context, Routes.itinerary, arguments: tripId)`.
 - `TripRepository` covers trips only. For itinerary, polls, or expenses, add your own repository in `features/<feature>/data/`, e.g. `features/expenses/data/expense_repository.dart`. See "Adding your Firestore repository" below.
@@ -66,7 +68,14 @@ inviteCodes/{code}                    tripId    # lets a non-member turn a code 
 
 **Roles:** `organizerId` is the trip's organizer; `memberIds` is everyone in the trip, organizer included. Check a role with `trip.roleOf(currentUserId)`, which returns `TripRole.organizer`, `TripRole.member`, or `null` if the user isn't in the trip.
 
-Until Firebase Auth replaces the `AuthService` stub, every trip is saved under the test user `u1`. Firestore is in test mode (open to anyone); switch to real rules once sign-in works.
+**Sign in:** the app uses Firebase Auth (email + password). Accounts show up in the Firebase console under **Authentication → Users**, and each user's id there is what goes in `memberIds` / `organizerId`. Data made before sign in existed (e.g. trips added by hand with `memberIds: ["u1"]`) won't show up for real accounts; add your **User UID** to `memberIds` in the console if you need it.
+
+Firestore is still in test mode (open to anyone, expires around Dec 21). Next step: real rules now that sign in works.
+
+**Testing with sign in:**
+- `TripSyncApp()` and `InMemoryAuthService()` start signed in as `AuthService.testUser` (`u1`), so the app opens on My Trips and your ViewModels get a user.
+- `InMemoryAuthService.signedOut()` starts signed out, e.g. `TripSyncApp(auth: InMemoryAuthService.signedOut())`. The test user's password is `InMemoryAuthService.testPassword`; `signInAsTestUser(tester)` in `test/test_helpers.dart` fills in the form.
+- Signed out, every screen except Sign In and Register shows Sign In instead (`Routes.public` in `routes.dart`). If you add a screen people should reach without an account, add it there.
 
 ### Adding your Firestore repository
 
@@ -92,7 +101,7 @@ Until Firebase Auth replaces the `AuthService` stub, every trip is saved under t
 
 ## Decided, not done yet
 
-- **Routing:** built-in named routes for now. Consider `go_router` if we need auth redirects once Firebase Auth is in.
+- **Routing:** built-in named routes. The sign-in check lives in `app.dart` (`_route`), so we don't need `go_router` for now.
 
 ## Who owns what
 
@@ -122,9 +131,9 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 
 **Story 1 · Account access.** *Purpose:* only signed-in travelers can see their trips.
 - Register with email + password, sign in, sign out. Show loading and error states (wrong password, email already used).
-- [ ] `AuthService`: replace the stub with real register / sign in / sign out / `currentUser`
-- [ ] `AuthViewModel` + Sign In / Register views with form validation and error messages
-- [ ] Signed-out users can't reach trip screens
+- [x] `AuthService`: replace the stub with real register / sign in / sign out / `currentUser`
+- [x] `AuthViewModel` + Sign In / Register views with form validation and error messages
+- [x] Signed-out users can't reach trip screens
 
 **Story 2 · Create and invite.** *Purpose:* an organizer starts a trip and shares one code instead of adding people manually.
 - Form for trip name, destination, start and end dates. On save, show the generated invite code (e.g. `RME27A`) with a copy button. The creator becomes the organizer.

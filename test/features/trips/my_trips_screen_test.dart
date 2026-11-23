@@ -42,7 +42,7 @@ void main() {
     await tester.pumpWidget(
       TripSyncApp(repositories: Repositories(trips: repo)),
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Sign In'));
+    // already signed in, so the app opens on My Trips
     await tester.pumpAndSettle();
   }
 

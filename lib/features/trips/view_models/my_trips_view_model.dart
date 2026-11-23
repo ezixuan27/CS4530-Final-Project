@@ -28,6 +28,8 @@ class MyTripsViewModel extends ChangeNotifier {
     _notify();
   }
 
+  Future<void> signOut() => _auth.signOut();
+
   // The screen can be closed while a load is still running.
   void _notify() {
     if (!_disposed) notifyListeners();
