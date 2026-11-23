@@ -2,32 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'data/auth_service.dart';
+import 'data/repositories.dart';
 import 'data/trip_repository.dart';
 import 'features/expenses/data/expense_repository.dart';
-import 'features/expenses/data/in_memory_expense_repository.dart';
 import 'routes.dart';
 
 class TripSyncApp extends StatelessWidget {
-  final TripRepository repository;
+  final Repositories repositories;
   final AuthService auth;
-  final ExpenseRepository expenseRepository;
 
-  /// Defaults to in-memory fakes so tests don't need Firebase.
-  TripSyncApp({
-    super.key,
-    required this.repository,
-    AuthService? auth,
-    ExpenseRepository? expenseRepository,
-  }) : auth = auth ?? AuthService(),
-       expenseRepository = expenseRepository ?? InMemoryExpenseRepository();
+  /// Without [repositories], every repository is the in-memory version
+  /// (what tests want). `main.dart` passes `Repositories.firestore()`.
+  TripSyncApp({super.key, Repositories? repositories, AuthService? auth})
+    : repositories = repositories ?? Repositories(),
+      auth = auth ?? AuthService();
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
+      // One line per repository. Screens read them with
+      // context.read<XRepository>().
       providers: [
         Provider<AuthService>.value(value: auth),
-        Provider<TripRepository>.value(value: repository),
-        Provider<ExpenseRepository>.value(value: expenseRepository),
+        Provider<TripRepository>.value(value: repositories.trips),
+        Provider<ExpenseRepository>.value(value: repositories.expenses),
       ],
       child: MaterialApp(
         title: 'TripSync',

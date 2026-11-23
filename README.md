@@ -16,11 +16,12 @@ dart analyze   # `flutter analyze` crashes when the project path has non-ASCII c
 ```
 lib/
   main.dart                 # entry point, picks the repository implementation
-  app.dart                  # MaterialApp, theme, app-wide providers (AuthService, TripRepository)
+  app.dart                  # MaterialApp, theme, provides AuthService + every repository
   routes.dart               # all route names + route table
   models/                   # plain data classes (fields only)
   data/                     # shared Model layer
     auth_service.dart               # current signed-in user (stub: test user)
+    repositories.dart               # every repository in one object (Firestore or in-memory)
     trip_repository.dart            # trips: create / join / look up / watch
     firestore_trip_repository.dart  # real version, used by the app
     in_memory_trip_repository.dart  # in-memory version, used by tests
@@ -44,7 +45,7 @@ Placeholder screens don't have a ViewModel yet. Add one when you build the scree
 - Get the signed-in user from `AuthService.currentUser` (pass `AuthService` into your ViewModel). It's a stub that always returns a test user until real sign-in is built (Member A). Don't hardcode user ids.
 - Trip-scoped screens get the trip id as the route argument:
   `Navigator.pushNamed(context, Routes.itinerary, arguments: tripId)`.
-- `TripRepository` covers trips only. For itinerary, polls, or expenses, add your own repository (interface + in-memory fake) in `features/<feature>/data/`, e.g. `features/expenses/data/expense_repository.dart`, and register its provider in `app.dart`. That way we don't all edit the same file.
+- `TripRepository` covers trips only. For itinerary, polls, or expenses, add your own repository in `features/<feature>/data/`, e.g. `features/expenses/data/expense_repository.dart`. See "Adding your Firestore repository" below.
 - Money is stored as integer cents (`Expense.amountInCents`), not `double`.
 
 ## Firebase
@@ -54,14 +55,38 @@ The app is connected to the **CS4530FinalProject** Firebase project (iOS only). 
 **Firestore layout** (add your collections here when you write your repository):
 
 ```
-trips/{tripId}       name, destination, startDate, endDate (Timestamp),
-                     inviteCode, organizerId, memberIds, createdAt
-inviteCodes/{code}   tripId    # lets a non-member turn a code into a trip id
+trips/{tripId}                        name, destination, startDate, endDate (Timestamp),
+                                      inviteCode, organizerId, memberIds, createdAt
+trips/{tripId}/expenses/{expenseId}   description, amountInCents, paidBy, paidByName,
+                                      createdAt
+inviteCodes/{code}                    tripId    # lets a non-member turn a code into a trip id
 ```
 
 **Roles:** `organizerId` is the trip's organizer; `memberIds` is everyone in the trip, organizer included. Check a role with `trip.roleOf(currentUserId)`, which returns `TripRole.organizer`, `TripRole.member`, or `null` if the user isn't in the trip.
 
 Until Firebase Auth replaces the `AuthService` stub, every trip is saved under the test user `u1`. Firestore is in test mode (open to anyone); switch to real rules once sign-in works.
+
+### Adding your Firestore repository
+
+**Copy the expenses feature.** `lib/features/expenses/` is a complete working example: repository, ViewModel, screen, and tests. Swap in your feature's names (`ItineraryRepository`, `PollRepository`, ...).
+
+**1. Three files in `features/<feature>/data/`:**
+
+| File | What it is | Expenses example |
+|---|---|---|
+| `<x>_repository.dart` | The interface. `Future` for actions, `Stream` for anything a screen shows, so it updates live (10-second sync). | `expense_repository.dart` |
+| `in_memory_<x>_repository.dart` | Data in a list or map. Tests and `Repositories()` use it. | `in_memory_expense_repository.dart` |
+| `firestore_<x>_repository.dart` | The real one. Store data under the trip (`trips/{tripId}/<x>`) so a listener only reads that trip. Convert Firestore maps to models inside this file; dates as `Timestamp`, money as `int` cents. | `firestore_expense_repository.dart` |
+
+**2. Register it** in two places (copy the `expenses` lines):
+- `lib/data/repositories.dart`: add a field, an in-memory default in the constructor, and the Firestore version in `Repositories.firestore()`.
+- `lib/app.dart`: add `Provider<XRepository>.value(value: repositories.x)` to the providers list.
+
+**3. Use it:** the view passes `context.read<XRepository>()` into its ViewModel. The ViewModel listens to the stream once and cancels in `dispose()`, like `ExpenseViewModel` (see "10-second sync" below).
+
+**4. Test it:** `TripSyncApp()` and `Repositories()` use the in-memory versions by default. Pass your own to seed data, e.g. `TripSyncApp(repositories: Repositories(expenses: seededRepo))`. For the Firestore version, use `FakeFirebaseFirestore` like `test/features/expenses/expense_repository_test.dart`.
+
+**5. Document it:** add your collection to the Firestore layout above.
 
 ## Decided, not done yet
 
@@ -117,7 +142,7 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 - [x] Create the Firebase project, add `firebase_core`, initialize in `main.dart`
 - [x] `FirestoreTripRepository` implementing `TripRepository`. Store roles (organizer / member).
 - [ ] Tests for `FirestoreTripRepository` (e.g. with `fake_cloud_firestore`)
-- [ ] Provide every repository in `app.dart`. Write a short "how to add your Firestore repository" note for B and C.
+- [x] Provide every repository in `app.dart`. Write a short "how to add your Firestore repository" note for B and C.
 
 ### Marina · Itinerary and suggestions
 

@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project/app.dart';
-import 'package:final_project/data/in_memory_trip_repository.dart';
 
 void main() {
-  Future<void> start(WidgetTester tester) =>
-      tester.pumpWidget(TripSyncApp(repository: InMemoryTripRepository()));
+  Future<void> start(WidgetTester tester) => tester.pumpWidget(TripSyncApp());
 
   Future<void> tap(WidgetTester tester, String label) async {
     await tester.tap(

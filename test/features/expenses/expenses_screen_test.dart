@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project/app.dart';
-import 'package:final_project/data/in_memory_trip_repository.dart';
+import 'package:final_project/data/repositories.dart';
 import 'package:final_project/features/expenses/data/in_memory_expense_repository.dart';
 import 'package:final_project/routes.dart';
 
@@ -12,10 +12,7 @@ void main() {
   Future<void> openExpenses(WidgetTester tester) async {
     expenses = InMemoryExpenseRepository();
     await tester.pumpWidget(
-      TripSyncApp(
-        repository: InMemoryTripRepository(),
-        expenseRepository: expenses,
-      ),
+      TripSyncApp(repositories: Repositories(expenses: expenses)),
     );
     tester
         .state<NavigatorState>(find.byType(Navigator))
