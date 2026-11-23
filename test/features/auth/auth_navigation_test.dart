@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:final_project/app.dart';
+import 'package:final_project/data/in_memory_auth_service.dart';
+
+import '../../test_helpers.dart';
 
 void main() {
-  Future<void> start(WidgetTester tester) => tester.pumpWidget(TripSyncApp());
+  Future<void> start(WidgetTester tester) =>
+      tester.pumpWidget(TripSyncApp(auth: InMemoryAuthService.signedOut()));
 
   Future<void> tap(WidgetTester tester, String label) async {
     await tester.tap(
@@ -26,7 +30,7 @@ void main() {
 
   testWidgets('back after Sign In does not return to Sign In', (tester) async {
     await start(tester);
-    await tap(tester, 'Sign In');
+    await signInAsTestUser(tester);
     await systemBack(tester);
     expect(appBarTitle('My Trips'), findsOneWidget);
   });
@@ -36,6 +40,9 @@ void main() {
   ) async {
     await start(tester);
     await tap(tester, 'Register');
+    await tester.enterText(field('Name'), 'Ben');
+    await tester.enterText(field('Email'), 'ben@example.com');
+    await tester.enterText(field('Password'), 'secret123');
     await tap(tester, 'Create account');
     await systemBack(tester);
     expect(appBarTitle('My Trips'), findsOneWidget);
@@ -45,7 +52,7 @@ void main() {
     tester,
   ) async {
     await start(tester);
-    await tap(tester, 'Sign In');
+    await signInAsTestUser(tester);
     await tap(tester, 'Sign Out');
     await systemBack(tester);
     expect(appBarTitle('My Trips'), findsNothing);

@@ -19,6 +19,19 @@ class TripSyncApp extends StatelessWidget {
     : repositories = repositories ?? Repositories(),
       auth = auth ?? InMemoryAuthService();
 
+  /// Signed out? Every screen except Sign In / Register shows Sign In.
+  Route<dynamic>? _route(RouteSettings settings) {
+    var name = settings.name;
+    if (!Routes.table.containsKey(name)) return null;
+    if (!auth.isSignedIn && !Routes.public.contains(name)) {
+      name = Routes.signIn;
+    }
+    return MaterialPageRoute(
+      builder: Routes.table[name]!,
+      settings: RouteSettings(name: name, arguments: settings.arguments),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -36,8 +49,11 @@ class TripSyncApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         ),
-        initialRoute: Routes.signIn,
-        routes: Routes.table,
+        initialRoute: auth.isSignedIn ? Routes.myTrips : Routes.signIn,
+        onGenerateRoute: _route,
+        // otherwise '/trips' would also push '/' under it, and back would
+        // go to Sign In
+        onGenerateInitialRoutes: (name) => [_route(RouteSettings(name: name))!],
       ),
     );
   }

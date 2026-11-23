@@ -39,4 +39,7 @@ class Routes {
   };
 
   static List<String> get all => table.keys.toList();
+
+  /// The only screens you can open while signed out.
+  static const public = {signIn, register};
 }

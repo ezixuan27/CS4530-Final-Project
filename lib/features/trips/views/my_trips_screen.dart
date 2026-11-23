@@ -42,11 +42,15 @@ class _MyTripsView extends StatelessWidget {
         title: const Text('My Trips'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pushNamedAndRemoveUntil(
-              context,
-              Routes.signIn,
-              (_) => false,
-            ),
+            onPressed: () async {
+              await vm.signOut();
+              if (!context.mounted) return;
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                Routes.signIn,
+                (_) => false,
+              );
+            },
             child: const Text('Sign Out'),
           ),
         ],
