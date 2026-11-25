@@ -4,7 +4,9 @@ import 'package:final_project/data/auth_service.dart';
 import 'package:final_project/data/in_memory_auth_service.dart';
 import 'package:final_project/data/in_memory_trip_repository.dart';
 import 'package:final_project/features/voting/data/in_memory_poll_repository.dart';
+import 'package:final_project/features/voting/data/poll_repository.dart';
 import 'package:final_project/features/voting/view_models/poll_view_model.dart';
+import 'package:final_project/models/activity_poll.dart';
 
 void main() {
   final me = AuthService.testUser.id; // 'u1'
@@ -145,6 +147,99 @@ void main() {
       await settle();
       expect(error, 'That option is no longer in this poll.');
       expect(vm.polls.single.votes, isEmpty);
+    });
+
+    group('editPoll', () {
+      List<PollOptionEdit> rows(Map<String?, String> m) => [
+        for (final e in m.entries) PollOptionEdit(from: e.key, to: e.value),
+      ];
+
+      Future<PollViewModel> withPoll({String organizerId = 'u1'}) async {
+        final tripId = await seedTrip(organizerId: organizerId);
+        await polls.createPoll(
+          tripId: tripId,
+          question: 'Q',
+          options: const ['A', 'B', 'C'],
+          createdBy: organizerId,
+        );
+        return open(tripId);
+      }
+
+      test('rejects when not organizer', () async {
+        final vm = await withPoll(organizerId: 'u2');
+        final error = await vm.editPoll(
+          vm.polls.single,
+          question: 'New',
+          options: rows({'A': 'A', 'B': 'B'}),
+        );
+        await settle();
+        expect(error, 'Only the organizer can edit polls.');
+        expect(vm.polls.single.question, 'Q');
+      });
+
+      final cases = <String, (String, Map<String?, String>, String)>{
+        'empty question': ('  ', {'A': 'A', 'B': 'B'}, 'Enter a question.'),
+        'fewer than 2 options': (
+          'Q',
+          {'A': 'A', 'B': ' '},
+          'Add at least 2 options.',
+        ),
+        'duplicate options': (
+          'Q',
+          {'A': ' Pizza ', 'B': 'pizza'},
+          'Each option must be different.',
+        ),
+      };
+      cases.forEach((name, c) {
+        test('rejects $name', () async {
+          final vm = await withPoll();
+          final error = await vm.editPoll(
+            vm.polls.single,
+            question: c.$1,
+            options: rows(c.$2),
+          );
+          await settle();
+          expect(error, c.$3);
+          expect(vm.polls.single.options, ['A', 'B', 'C']);
+        });
+      });
+
+      test('trims and drops blank rows', () async {
+        final vm = await withPoll();
+        await vm.vote(vm.polls.single, 'C');
+        await settle();
+
+        final error = await vm.editPoll(
+          vm.polls.single,
+          question: ' Q2 ',
+          options: rows({'A': ' A2 ', 'B': 'B', 'C': '  '}),
+        );
+        await settle();
+
+        expect(error, isNull);
+        final poll = vm.polls.single;
+        expect(poll.question, 'Q2');
+        expect(poll.options, ['A2', 'B']);
+        expect(poll.voteOf(me), isNull);
+      });
+
+      test('reports a failed save', () async {
+        final vm = await withPoll();
+        final missing = ActivityPoll(
+          id: 'nope',
+          tripId: vm.tripId,
+          question: 'Q',
+          options: const ['A', 'B'],
+          createdBy: me,
+          createdAt: DateTime(2026),
+        );
+        final error = await vm.editPoll(
+          missing,
+          question: 'Q',
+          options: rows({'A': 'A', 'B': 'B'}),
+        );
+        expect(error, 'Could not save. Try again.');
+      });
     });
   });
 }

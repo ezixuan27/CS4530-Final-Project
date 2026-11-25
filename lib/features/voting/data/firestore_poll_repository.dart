@@ -65,9 +65,7 @@ class FirestorePollRepository implements PollRepository {
       final snapshot = await tx.get(ref);
       final data = snapshot.data();
       if (data == null) throw StateError('Poll $pollId not found');
-      final votes = Map<String, String>.from(
-        data['votes'] as Map? ?? const {},
-      );
+      final votes = Map<String, String>.from(data['votes'] as Map? ?? const {});
       // set (not update) so the votes map is replaced, not merged.
       tx.set(ref, {
         ...data,

@@ -181,7 +181,10 @@ void main() {
               tripId: 'trip1',
               pollId: 'nope',
               question: 'Q',
-              options: const [PollOptionEdit(to: 'A'), PollOptionEdit(to: 'B')],
+              options: const [
+                PollOptionEdit(to: 'A'),
+                PollOptionEdit(to: 'B'),
+              ],
             ),
             throwsA(anything),
           );

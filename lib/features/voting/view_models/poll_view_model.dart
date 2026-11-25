@@ -57,12 +57,13 @@ class PollViewModel extends ChangeNotifier {
   }) async {
     if (!isOrganizer) return 'Only the organizer can create polls.';
     final trimmed = question.trim();
-    if (trimmed.isEmpty) return 'Enter a question.';
     final parsed = parseOptions(options);
-    if (parsed.length < 2) return 'Add at least 2 options, one per line.';
-    if (parsed.map((o) => o.toLowerCase()).toSet().length != parsed.length) {
-      return 'Each option must be different.';
-    }
+    final invalid = _validate(
+      trimmed,
+      parsed,
+      tooFew: 'Add at least 2 options, one per line.',
+    );
+    if (invalid != null) return invalid;
     return _save(
       () => _polls.createPoll(
         tripId: tripId,
@@ -87,6 +88,49 @@ class PollViewModel extends ChangeNotifier {
         option: option,
       ),
     );
+  }
+
+  /// Edits [poll]'s question and option rows (organizer only). Trims every
+  /// row and drops blank ones, which removes that option and its votes.
+  /// Returns an error message to show, or null on success.
+  Future<String?> editPoll(
+    ActivityPoll poll, {
+    required String question,
+    required List<PollOptionEdit> options,
+  }) async {
+    if (!isOrganizer) return 'Only the organizer can edit polls.';
+    final trimmed = question.trim();
+    final rows = [
+      for (final o in options)
+        if (o.to.trim().isNotEmpty)
+          PollOptionEdit(from: o.from, to: o.to.trim()),
+    ];
+    final invalid = _validate(trimmed, [
+      for (final r in rows) r.to,
+    ], tooFew: 'Add at least 2 options.');
+    if (invalid != null) return invalid;
+    return _save(
+      () => _polls.editPoll(
+        tripId: tripId,
+        pollId: poll.id,
+        question: trimmed,
+        options: rows,
+      ),
+    );
+  }
+
+  /// Shared create/edit checks on an already trimmed question and options.
+  static String? _validate(
+    String question,
+    List<String> options, {
+    required String tooFew,
+  }) {
+    if (question.isEmpty) return 'Enter a question.';
+    if (options.length < 2) return tooFew;
+    if (options.map((o) => o.toLowerCase()).toSet().length != options.length) {
+      return 'Each option must be different.';
+    }
+    return null;
   }
 
   Future<String?> _save(Future<void> Function() write) async {
