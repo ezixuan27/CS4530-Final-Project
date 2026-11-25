@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/auth_service.dart';
+import '../../../models/expense.dart';
 import '../data/expense_repository.dart';
 import '../view_models/expense_view_model.dart';
 
@@ -44,17 +45,17 @@ class _ExpensesView extends StatelessWidget {
           context: context,
           builder: (_) => ChangeNotifierProvider.value(
             value: vm,
-            child: const _AddExpenseDialog(),
+            child: const _ExpenseDialog(),
           ),
         ),
         icon: const Icon(Icons.add),
         label: const Text('Add expense'),
       ),
-      body: _buildBody(vm),
+      body: _buildBody(context, vm),
     );
   }
 
-  Widget _buildBody(ExpenseViewModel vm) {
+  Widget _buildBody(BuildContext context, ExpenseViewModel vm) {
     if (vm.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -73,22 +74,43 @@ class _ExpensesView extends StatelessWidget {
               ExpenseViewModel.formatCents(expense.amountInCents),
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
+            // Only the payer can edit; other rows aren't tappable.
+            onTap: vm.canEdit(expense)
+                ? () => showDialog<void>(
+                    context: context,
+                    builder: (_) => ChangeNotifierProvider.value(
+                      value: vm,
+                      child: _ExpenseDialog(editing: expense),
+                    ),
+                  )
+                : null,
           ),
       ],
     );
   }
 }
 
-class _AddExpenseDialog extends StatefulWidget {
-  const _AddExpenseDialog();
+/// Adds an expense, or edits [editing] when given.
+class _ExpenseDialog extends StatefulWidget {
+  const _ExpenseDialog({this.editing});
+
+  final Expense? editing;
 
   @override
-  State<_AddExpenseDialog> createState() => _AddExpenseDialogState();
+  State<_ExpenseDialog> createState() => _ExpenseDialogState();
 }
 
-class _AddExpenseDialogState extends State<_AddExpenseDialog> {
-  final _description = TextEditingController();
-  final _amount = TextEditingController();
+class _ExpenseDialogState extends State<_ExpenseDialog> {
+  late final _description = TextEditingController(
+    text: widget.editing?.description,
+  );
+  // "48.50" for 4850: the formatted amount without the euro sign.
+  late final _amount = TextEditingController(
+    text: switch (widget.editing) {
+      final e? => ExpenseViewModel.formatCents(e.amountInCents).substring(1),
+      null => null,
+    },
+  );
   String? _error;
 
   @override
@@ -100,10 +122,17 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
 
   Future<void> _save() async {
     final vm = context.read<ExpenseViewModel>();
-    final error = await vm.addExpense(
-      description: _description.text,
-      amount: _amount.text,
-    );
+    final editing = widget.editing;
+    final error = editing == null
+        ? await vm.addExpense(
+            description: _description.text,
+            amount: _amount.text,
+          )
+        : await vm.editExpense(
+            editing,
+            description: _description.text,
+            amount: _amount.text,
+          );
     if (!mounted) return;
     if (error == null) {
       Navigator.pop(context);
@@ -116,7 +145,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
   Widget build(BuildContext context) {
     final saving = context.watch<ExpenseViewModel>().isSaving;
     return AlertDialog(
-      title: const Text('Add expense'),
+      title: Text(widget.editing == null ? 'Add expense' : 'Edit expense'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
