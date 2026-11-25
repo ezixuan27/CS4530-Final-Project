@@ -13,4 +13,13 @@ abstract class ExpenseRepository {
     required String paidBy,
     required String paidByName,
   });
+
+  /// Changes an expense's description and amount; the payer stays the same.
+  /// Throws if the expense doesn't exist.
+  Future<void> updateExpense({
+    required String tripId,
+    required String expenseId,
+    required String description,
+    required int amountInCents,
+  });
 }

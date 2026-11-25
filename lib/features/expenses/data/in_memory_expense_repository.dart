@@ -54,4 +54,28 @@ class InMemoryExpenseRepository implements ExpenseRepository {
     );
     _changes.add(null);
   }
+
+  @override
+  Future<void> updateExpense({
+    required String tripId,
+    required String expenseId,
+    required String description,
+    required int amountInCents,
+  }) async {
+    final index = _expenses.indexWhere(
+      (e) => e.id == expenseId && e.tripId == tripId,
+    );
+    if (index == -1) throw StateError('Expense $expenseId not found');
+    final old = _expenses[index];
+    _expenses[index] = Expense(
+      id: old.id,
+      tripId: old.tripId,
+      description: description,
+      amountInCents: amountInCents,
+      paidBy: old.paidBy,
+      paidByName: old.paidByName,
+      createdAt: old.createdAt,
+    );
+    _changes.add(null);
+  }
 }

@@ -39,6 +39,19 @@ class FirestoreExpenseRepository implements ExpenseRepository {
     });
   }
 
+  @override
+  Future<void> updateExpense({
+    required String tripId,
+    required String expenseId,
+    required String description,
+    required int amountInCents,
+  }) async {
+    // update() fails if the document doesn't exist.
+    await _collection(tripId)
+        .doc(expenseId)
+        .update({'description': description, 'amountInCents': amountInCents});
+  }
+
   Expense _fromDoc(String tripId, String id, Map<String, dynamic> data) {
     // createdAt is null locally until the server sets the timestamp.
     final createdAt = data['createdAt'] as Timestamp?;
