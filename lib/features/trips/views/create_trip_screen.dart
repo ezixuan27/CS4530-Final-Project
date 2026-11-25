@@ -53,8 +53,9 @@ class _CreateTripFormState extends State<_CreateTripForm> {
   Future<void> _pickDate({required bool isStart}) async {
     final vm = context.read<CreateTripViewModel>();
     final today = DateUtils.dateOnly(DateTime.now());
-    // end date can't go before the start
-    final first = isStart ? today : (vm.startDate ?? today);
+    // past dates are ok (trip already started), end can't go before start
+    final earliest = DateTime(today.year - 5);
+    final first = isStart ? earliest : (vm.startDate ?? earliest);
     final current = isStart ? vm.startDate : vm.endDate;
     final picked = await showDatePicker(
       context: context,
@@ -62,7 +63,7 @@ class _CreateTripFormState extends State<_CreateTripForm> {
       lastDate: DateTime(today.year + 5, 12, 31),
       initialDate: current != null && !current.isBefore(first)
           ? current
-          : first,
+          : (today.isBefore(first) ? first : today),
       helpText: isStart ? 'Start date' : 'End date',
     );
     if (picked == null) return;
