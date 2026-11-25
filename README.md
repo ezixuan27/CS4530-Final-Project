@@ -137,8 +137,8 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 
 **Story 2 · Create and invite.** *Purpose:* an organizer starts a trip and shares one code instead of adding people manually.
 - Form for trip name, destination, start and end dates. On save, show the generated invite code (e.g. `RME27A`) with a copy button. The creator becomes the organizer.
-- [ ] `CreateTripViewModel` + view: validation (name required, end date not before start)
-- [ ] Copy code to clipboard
+- [x] `CreateTripViewModel` + view: validation (name required, end date not before start)
+- [x] Copy code to clipboard
 
 **Story 3 · Join a trip.** *Purpose:* invited friends get into the group's plan with just the code.
 - Enter a code, then join and land in the trip. Unknown code shows an error. Joining twice is harmless.
