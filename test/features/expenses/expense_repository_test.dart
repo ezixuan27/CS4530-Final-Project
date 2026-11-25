@@ -80,6 +80,37 @@ void main() {
           await sub.cancel();
         },
       );
+
+      test('updateExpense changes description and amount only', () async {
+        await add('trip1', 'Tickets', 4800);
+        final before = (await repo.watchExpenses('trip1').first).single;
+
+        await repo.updateExpense(
+          tripId: 'trip1',
+          expenseId: before.id,
+          description: 'Museum tickets',
+          amountInCents: 5000,
+        );
+
+        final after = (await repo.watchExpenses('trip1').first).single;
+        expect(after.id, before.id);
+        expect(after.description, 'Museum tickets');
+        expect(after.amountInCents, 5000);
+        expect(after.paidBy, 'u2');
+        expect(after.paidByName, 'Ben');
+      });
+
+      test('updateExpense throws for a missing expense', () async {
+        await expectLater(
+          repo.updateExpense(
+            tripId: 'trip1',
+            expenseId: 'nope',
+            description: 'X',
+            amountInCents: 100,
+          ),
+          throwsA(anything),
+        );
+      });
     });
   });
 }

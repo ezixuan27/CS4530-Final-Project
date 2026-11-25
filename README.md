@@ -178,14 +178,16 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 - The organizer posts a poll with options (e.g. Vatican Museums, Cooking class). Members pick one and vote, and can see the results.
 - [x] `PollRepository` (interface + in-memory fake) in `features/voting/data/`
 - [x] `PollViewModel` + view: create poll (organizer), vote (one vote per member, can change it), show counts
+- [x] Edit a poll (organizer): change the question, rename options (votes kept), remove options (their votes deleted), add options
 
 **Story 8 · Track expenses.** *Purpose:* everyone can see who paid for what.
 - Add an expense with description, amount, and payer, and show a list like "Tickets · €48 · Paid by Ben". Amounts are integer cents. No splitting or who-owes-whom (not in the FR).
 - [x] `ExpenseRepository` (interface + in-memory fake) in `features/expenses/data/`
 - [x] `ExpenseViewModel` + view: add form (amount > 0, description required), list for `tripId`
+- [x] Edit an expense (payer only): tap your own expense to change its description and amount
 
 **Shared with backend.**
 - [x] `FirestorePollRepository`, `FirestoreExpenseRepository` with live updates
-- [ ] Firestore rules: only the organizer posts polls. Members of the trip can vote and add expenses.
+- [ ] Firestore rules: only the organizer posts and edits polls. Members of the trip can vote and add expenses. Only the payer edits an expense.
 
 Shared files (`routes.dart`, `models/`, `data/`): keep changes small and mention them in your PR.

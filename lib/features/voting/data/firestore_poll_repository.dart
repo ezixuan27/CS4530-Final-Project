@@ -51,6 +51,31 @@ class FirestorePollRepository implements PollRepository {
     await _collection(tripId).doc(pollId).update({'votes.$userId': option});
   }
 
+  @override
+  Future<void> editPoll({
+    required String tripId,
+    required String pollId,
+    required String question,
+    required List<PollOptionEdit> options,
+  }) async {
+    final ref = _collection(tripId).doc(pollId);
+    // A transaction re-reads the votes at write time, so a vote cast while
+    // the organizer was editing is remapped instead of lost.
+    await _db.runTransaction((tx) async {
+      final snapshot = await tx.get(ref);
+      final data = snapshot.data();
+      if (data == null) throw StateError('Poll $pollId not found');
+      final votes = Map<String, String>.from(data['votes'] as Map? ?? const {});
+      // set (not update) so the votes map is replaced, not merged.
+      tx.set(ref, {
+        ...data,
+        'question': question,
+        'options': [for (final o in options) o.to],
+        'votes': remapVotes(votes, options),
+      });
+    });
+  }
+
   ActivityPoll _fromDoc(String tripId, String id, Map<String, dynamic> data) {
     // createdAt is null locally until the server sets the timestamp.
     final createdAt = data['createdAt'] as Timestamp?;

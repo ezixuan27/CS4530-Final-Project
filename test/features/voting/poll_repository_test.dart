@@ -113,6 +113,83 @@ void main() {
           'u2': 'Cooking class',
         });
       });
+
+      group('editPoll', () {
+        const vatican = 'Vatican Museums';
+        const cooking = 'Cooking class';
+
+        Future<ActivityPoll> seeded() async {
+          await create_('trip1', 'Q');
+          final poll = await onlyPoll('trip1');
+          await vote(poll, 'u1', vatican);
+          await vote(poll, 'u2', cooking);
+          return poll;
+        }
+
+        Future<ActivityPoll> edit(
+          ActivityPoll poll,
+          List<PollOptionEdit> options, {
+          String question = 'Q',
+        }) async {
+          await repo.editPoll(
+            tripId: poll.tripId,
+            pollId: poll.id,
+            question: question,
+            options: options,
+          );
+          return onlyPoll('trip1');
+        }
+
+        test('renames an option and keeps its votes', () async {
+          final poll = await edit(await seeded(), const [
+            PollOptionEdit(from: vatican, to: 'Vatican'),
+            PollOptionEdit(from: cooking, to: cooking),
+          ], question: 'Q2');
+
+          expect(poll.question, 'Q2');
+          expect(poll.options, ['Vatican', cooking]);
+          expect(poll.voteOf('u1'), 'Vatican');
+          expect(poll.countFor('Vatican'), 1);
+          expect(poll.voteOf('u2'), cooking);
+        });
+
+        test('removing an option deletes its votes', () async {
+          final poll = await edit(await seeded(), const [
+            PollOptionEdit(from: cooking, to: cooking),
+            PollOptionEdit(to: 'Pasta'),
+          ]);
+
+          expect(poll.options, [cooking, 'Pasta']);
+          expect(poll.voteOf('u1'), isNull);
+          expect(poll.voteOf('u2'), cooking);
+          expect(poll.countFor('Pasta'), 0);
+        });
+
+        test('swapping names keeps votes on their rows', () async {
+          final poll = await edit(await seeded(), const [
+            PollOptionEdit(from: vatican, to: cooking),
+            PollOptionEdit(from: cooking, to: vatican),
+          ]);
+
+          expect(poll.voteOf('u1'), cooking);
+          expect(poll.voteOf('u2'), vatican);
+        });
+
+        test('throws for a missing poll', () async {
+          await expectLater(
+            repo.editPoll(
+              tripId: 'trip1',
+              pollId: 'nope',
+              question: 'Q',
+              options: const [
+                PollOptionEdit(to: 'A'),
+                PollOptionEdit(to: 'B'),
+              ],
+            ),
+            throwsA(anything),
+          );
+        });
+      });
     });
   });
 }

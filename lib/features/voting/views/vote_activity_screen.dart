@@ -88,7 +88,7 @@ class _PollCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.read<PollViewModel>();
+    final vm = context.watch<PollViewModel>();
     final myVote = poll.voteOf(vm.currentUserId);
     final theme = Theme.of(context);
     return Card(
@@ -99,8 +99,29 @@ class _PollCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-              child: Text(poll.question, style: theme.textTheme.titleMedium),
+              padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      poll.question,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  if (vm.isOrganizer)
+                    IconButton(
+                      tooltip: 'Edit poll',
+                      icon: const Icon(Icons.edit),
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => ChangeNotifierProvider.value(
+                          value: vm,
+                          child: _EditPollDialog(poll: poll),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             for (final option in poll.options)
               ListTile(
@@ -201,6 +222,137 @@ class _NewPollDialogState extends State<_NewPollDialog> {
         FilledButton(
           onPressed: _saving ? null : _create,
           child: const Text('Create'),
+        ),
+      ],
+    );
+  }
+}
+
+/// One option row in the edit dialog: the option's original text (null for
+/// a new row) and the field holding its edited text.
+class _OptionRow {
+  _OptionRow(this.from) : controller = TextEditingController(text: from);
+
+  final String? from;
+  final TextEditingController controller;
+}
+
+class _EditPollDialog extends StatefulWidget {
+  const _EditPollDialog({required this.poll});
+
+  final ActivityPoll poll;
+
+  @override
+  State<_EditPollDialog> createState() => _EditPollDialogState();
+}
+
+class _EditPollDialogState extends State<_EditPollDialog> {
+  late final _question = TextEditingController(text: widget.poll.question);
+  late final List<_OptionRow> _rows = [
+    for (final option in widget.poll.options) _OptionRow(option),
+  ];
+  String? _error;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _question.dispose();
+    for (final row in [..._rows, ..._removed]) {
+      row.controller.dispose();
+    }
+    super.dispose();
+  }
+
+  /// Removed rows' controllers are disposed with the dialog, not right
+  /// away, because their TextField is still mounted until the next frame.
+  final List<_OptionRow> _removed = [];
+
+  void _remove(_OptionRow row) {
+    setState(() {
+      _rows.remove(row);
+      _removed.add(row);
+    });
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final error = await context.read<PollViewModel>().editPoll(
+      widget.poll,
+      question: _question.text,
+      options: [
+        for (final row in _rows)
+          PollOptionEdit(from: row.from, to: row.controller.text),
+      ],
+    );
+    if (!mounted) return;
+    if (error == null) {
+      Navigator.pop(context);
+    } else {
+      setState(() {
+        _error = error;
+        _saving = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit poll'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _question,
+              decoration: const InputDecoration(labelText: 'Question'),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            for (final (i, row) in _rows.indexed)
+              Row(
+                key: ObjectKey(row),
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: row.controller,
+                      decoration: InputDecoration(labelText: 'Option ${i + 1}'),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Remove option',
+                    icon: const Icon(Icons.close),
+                    onPressed: _saving ? null : () => _remove(row),
+                  ),
+                ],
+              ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: _saving
+                    ? null
+                    : () => setState(() => _rows.add(_OptionRow(null))),
+                child: const Text('+ Add option'),
+              ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _saving ? null : _save,
+          child: const Text('Save'),
         ),
       ],
     );

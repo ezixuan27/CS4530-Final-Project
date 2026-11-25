@@ -4,6 +4,7 @@ import 'package:final_project/data/auth_service.dart';
 import 'package:final_project/data/in_memory_auth_service.dart';
 import 'package:final_project/features/expenses/data/in_memory_expense_repository.dart';
 import 'package:final_project/features/expenses/view_models/expense_view_model.dart';
+import 'package:final_project/models/expense.dart';
 
 void main() {
   group('parseAmountToCents', () {
@@ -100,6 +101,79 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect(vm.expenses.map((e) => e.description), ['Dinner']);
+    });
+
+    group('editing', () {
+      Future<Expense> seed(String paidBy) async {
+        await repo.addExpense(
+          tripId: 'trip1',
+          description: 'Tickets',
+          amountInCents: 4800,
+          paidBy: paidBy,
+          paidByName: 'Someone',
+        );
+        await Future<void>.delayed(Duration.zero);
+        return vm.expenses.single;
+      }
+
+      test('canEdit is true only for the payer', () async {
+        final mine = await seed(AuthService.testUser.id);
+        expect(vm.canEdit(mine), isTrue);
+        final theirs = Expense(
+          id: 'x',
+          tripId: 'trip1',
+          description: 'D',
+          amountInCents: 1,
+          paidBy: 'u2',
+          paidByName: 'Ben',
+          createdAt: DateTime(2026),
+        );
+        expect(vm.canEdit(theirs), isFalse);
+      });
+
+      test("editExpense rejects someone else's expense", () async {
+        final theirs = await seed('u2');
+        final error = await vm.editExpense(
+          theirs,
+          description: 'Hacked',
+          amount: '1',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(error, 'Only the person who paid can edit this expense.');
+        expect(vm.expenses.single.description, 'Tickets');
+      });
+
+      test('editExpense rejects an invalid amount', () async {
+        final mine = await seed(AuthService.testUser.id);
+        final error = await vm.editExpense(
+          mine,
+          description: 'Tickets',
+          amount: 'abc',
+        );
+        expect(error, 'Enter an amount greater than 0, e.g. 48 or 12.50.');
+      });
+
+      test('editExpense rejects an empty description', () async {
+        final mine = await seed(AuthService.testUser.id);
+        final error = await vm.editExpense(mine, description: ' ', amount: '5');
+        expect(error, 'Enter what the expense was for.');
+      });
+
+      test('editExpense saves the new values', () async {
+        final mine = await seed(AuthService.testUser.id);
+        final error = await vm.editExpense(
+          mine,
+          description: ' Museum ',
+          amount: '50.5',
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(error, isNull);
+        final e = vm.expenses.single;
+        expect(e.description, 'Museum');
+        expect(e.amountInCents, 5050);
+      });
     });
   });
 }

@@ -82,4 +82,39 @@ void main() {
     expect(find.text('€30.50'), findsOneWidget);
     expect(find.text('Paid by Ben'), findsOneWidget);
   });
+
+  testWidgets('payer edits an expense', (tester) async {
+    await openExpenses(tester);
+    await fillAndSave(tester, 'Tickets', '48.50');
+
+    await tester.tap(find.text('Tickets'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit expense'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Tickets'), findsOneWidget);
+    expect(find.widgetWithText(TextField, '48.50'), findsOneWidget);
+
+    await tester.enterText(find.widgetWithText(TextField, '48.50'), '50');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('€50'), findsOneWidget);
+    expect(find.text('€48.50'), findsNothing);
+  });
+
+  testWidgets("someone else's expense is not editable", (tester) async {
+    await openExpenses(tester);
+    await expenses.addExpense(
+      tripId: 'trip1',
+      description: 'Dinner',
+      amountInCents: 3050,
+      paidBy: 'u2',
+      paidByName: 'Ben',
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Dinner'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit expense'), findsNothing);
+  });
 }

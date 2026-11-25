@@ -76,4 +76,28 @@ class InMemoryPollRepository implements PollRepository {
     );
     _changes.add(null);
   }
+
+  @override
+  Future<void> editPoll({
+    required String tripId,
+    required String pollId,
+    required String question,
+    required List<PollOptionEdit> options,
+  }) async {
+    final index = _polls.indexWhere(
+      (p) => p.id == pollId && p.tripId == tripId,
+    );
+    if (index == -1) throw StateError('Poll $pollId not found');
+    final poll = _polls[index];
+    _polls[index] = ActivityPoll(
+      id: poll.id,
+      tripId: poll.tripId,
+      question: question,
+      options: List.unmodifiable([for (final o in options) o.to]),
+      createdBy: poll.createdBy,
+      createdAt: poll.createdAt,
+      votes: Map.unmodifiable(remapVotes(poll.votes, options)),
+    );
+    _changes.add(null);
+  }
 }

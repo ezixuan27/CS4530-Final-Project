@@ -42,24 +42,64 @@ class ExpenseViewModel extends ChangeNotifier {
     required String description,
     required String amount,
   }) async {
-    final trimmed = description.trim();
-    if (trimmed.isEmpty) return 'Enter what the expense was for.';
-    final cents = parseAmountToCents(amount);
-    if (cents == null) {
-      return 'Enter an amount greater than 0, e.g. 48 or 12.50.';
-    }
+    final (error, trimmed, cents) = _validate(description, amount);
+    if (error != null) return error;
 
     final user = _auth.currentUser;
-    _isSaving = true;
-    notifyListeners();
-    try {
-      await _repository.addExpense(
+    return _save(
+      () => _repository.addExpense(
         tripId: tripId,
         description: trimmed,
         amountInCents: cents,
         paidBy: user.id,
         paidByName: user.name,
-      );
+      ),
+    );
+  }
+
+  /// Only the person who paid can edit an expense.
+  bool canEdit(Expense expense) => expense.paidBy == _auth.currentUser.id;
+
+  /// Changes [expense]'s description and amount (payer only).
+  /// Returns an error message to show, or null on success.
+  Future<String?> editExpense(
+    Expense expense, {
+    required String description,
+    required String amount,
+  }) async {
+    if (!canEdit(expense)) {
+      return 'Only the person who paid can edit this expense.';
+    }
+    final (error, trimmed, cents) = _validate(description, amount);
+    if (error != null) return error;
+
+    return _save(
+      () => _repository.updateExpense(
+        tripId: tripId,
+        expenseId: expense.id,
+        description: trimmed,
+        amountInCents: cents,
+      ),
+    );
+  }
+
+  /// Shared add/edit checks. Returns (error, trimmed description, cents);
+  /// the last two are only meaningful when error is null.
+  static (String?, String, int) _validate(String description, String amount) {
+    final trimmed = description.trim();
+    if (trimmed.isEmpty) return ('Enter what the expense was for.', '', 0);
+    final cents = parseAmountToCents(amount);
+    if (cents == null) {
+      return ('Enter an amount greater than 0, e.g. 48 or 12.50.', '', 0);
+    }
+    return (null, trimmed, cents);
+  }
+
+  Future<String?> _save(Future<void> Function() write) async {
+    _isSaving = true;
+    notifyListeners();
+    try {
+      await write();
       return null;
     } catch (_) {
       return 'Could not save the expense. Try again.';
