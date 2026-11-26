@@ -28,6 +28,10 @@ class MyTripsViewModel extends ChangeNotifier {
     _notify();
   }
 
+  /// Only the organizer gets the invite code shown.
+  bool isOrganizer(Trip trip) =>
+      trip.roleOf(_auth.currentUser.id) == TripRole.organizer;
+
   Future<void> signOut() => _auth.signOut();
 
   // The screen can be closed while a load is still running.

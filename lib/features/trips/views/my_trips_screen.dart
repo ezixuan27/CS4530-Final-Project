@@ -98,7 +98,11 @@ class _MyTripsView extends StatelessWidget {
         for (final trip in vm.trips)
           ListTile(
             title: Text(trip.name),
-            subtitle: Text(trip.destination),
+            subtitle: Text(
+              vm.isOrganizer(trip)
+                  ? '${trip.destination} · Code: ${trip.inviteCode}'
+                  : trip.destination,
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.pushNamed(
               context,

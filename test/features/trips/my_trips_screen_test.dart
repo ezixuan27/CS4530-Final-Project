@@ -72,6 +72,17 @@ void main() {
     );
   });
 
+  testWidgets('invite code shows only on trips I organize', (tester) async {
+    final repo = await seededRepo();
+    await openMyTrips(tester, repo);
+    final trips = await repo.tripsForUser(AuthService.testUser.id);
+    final mine = trips.firstWhere((t) => t.name == 'Italy Getaway');
+    final joined = trips.firstWhere((t) => t.name == 'Lisbon Weekend');
+
+    expect(find.text('Rome · Code: ${mine.inviteCode}'), findsOneWidget);
+    expect(find.textContaining(joined.inviteCode), findsNothing);
+  });
+
   testWidgets('My Trips shows an empty state with no trips', (tester) async {
     await openMyTrips(tester, InMemoryTripRepository());
     expect(
