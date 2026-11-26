@@ -70,7 +70,7 @@ inviteCodes/{code}                    tripId    # lets a non-member turn a code 
 
 **Sign in:** the app uses Firebase Auth (email + password). Accounts show up in the Firebase console under **Authentication → Users**, and each user's id there is what goes in `memberIds` / `organizerId`. Data made before sign in existed (e.g. trips added by hand with `memberIds: ["u1"]`) won't show up for real accounts; add your **User UID** to `memberIds` in the console if you need it.
 
-**Trips added by hand can't be joined by code** unless you also add `inviteCodes/{CODE}` with a `tripId` string field pointing at the trip. Joining looks up that doc, not the trip's `inviteCode` field. Trips made with Create Trip get both automatically.
+If you add a trip by hand in the console, also add a doc to `inviteCodes` (the code as the ID, with a `tripId` field), otherwise no one can join it with the code.
 
 Firestore is still in test mode (open to anyone, expires around Dec 21). Next step: real rules now that sign in works.
 
