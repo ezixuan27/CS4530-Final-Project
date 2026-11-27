@@ -1,24 +1,150 @@
 import { after, beforeEach, describe, test } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc } from 'firebase/firestore';
-import { MEM, ORG, TRIP, as, seedTrip, setup } from './helpers.js';
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore';
+import { MEM, ORG, OUT, TRIP, as, seed, seedTrip, setup } from './helpers.js';
 
 const env = await setup();
 after(() => env.cleanup());
 
-const poll = (uid) => doc(as(env, uid), `trips/${TRIP}/polls/p1`);
+const POLLS = `trips/${TRIP}/polls`;
+const CREATED_AT = Timestamp.fromDate(new Date('2026-11-23T10:00:00Z'));
+const storedPoll = {
+  question: 'Q',
+  options: ['A', 'B'],
+  votes: {},
+  createdBy: ORG,
+  createdAt: CREATED_AT,
+};
+
+const poll = (uid) => doc(as(env, uid), `${POLLS}/p1`);
+const polls = (uid) => collection(as(env, uid), POLLS);
+
+/** What PollRepository.createPoll writes, with optional overrides. */
+const newPoll = (overrides = {}) => ({
+  question: 'Day 2 afternoon?',
+  options: ['Vatican Museums', 'Cooking class'],
+  votes: {},
+  createdBy: ORG,
+  createdAt: serverTimestamp(),
+  ...overrides,
+});
 
 describe('polls', () => {
   beforeEach(async () => {
     await env.clearFirestore();
     await seedTrip(env, TRIP, { organizerId: ORG, memberIds: [ORG, MEM] });
+    await seed(env, `${POLLS}/p1`, storedPoll);
   });
 
-  test('signed-out user cannot read polls', async () => {
-    await assertFails(getDoc(poll(null)));
+  describe('read', () => {
+    test('signed-out user cannot read', async () => {
+      await assertFails(getDoc(poll(null)));
+    });
+
+    test('member can read', async () => {
+      await assertSucceeds(getDoc(poll(MEM)));
+    });
+
+    test('non-member cannot read', async () => {
+      await assertFails(getDoc(poll(OUT)));
+    });
+
+    test('organizer not listed in memberIds can still read', async () => {
+      await seedTrip(env, TRIP, { organizerId: ORG, memberIds: [MEM] });
+      await assertSucceeds(getDoc(poll(ORG)));
+    });
   });
 
-  test('member can read polls', async () => {
-    await assertSucceeds(getDoc(poll(MEM)));
+  describe('create', () => {
+    test('organizer creates a valid poll', async () => {
+      await assertSucceeds(addDoc(polls(ORG), newPoll()));
+    });
+
+    test('member cannot create a poll', async () => {
+      await assertFails(addDoc(polls(MEM), newPoll({ createdBy: MEM })));
+    });
+
+    test('organizer cannot create as someone else', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ createdBy: MEM })));
+    });
+
+    test('organizer cannot create with 1 option', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ options: ['Only'] })));
+    });
+
+    test('organizer cannot create with votes already in', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ votes: { [MEM]: 'Cooking class' } })));
+    });
+
+    test('organizer cannot create with an extra field', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ closed: true })));
+    });
+  });
+
+  describe('update', () => {
+    test('organizer edit via full-doc set is allowed', async () => {
+      // What FirestorePollRepository.editPoll writes inside its transaction.
+      await assertSucceeds(
+        setDoc(poll(ORG), {
+          ...storedPoll,
+          question: 'Q2',
+          options: ['A2', 'C'],
+          votes: { [MEM]: 'A2' },
+        }),
+      );
+    });
+
+    test('organizer can vote', async () => {
+      await assertSucceeds(updateDoc(poll(ORG), { [`votes.${ORG}`]: 'A' }));
+    });
+
+    test('member votes with a field-path update', async () => {
+      await assertSucceeds(updateDoc(poll(MEM), { [`votes.${MEM}`]: 'A' }));
+    });
+
+    test('member changes their own vote', async () => {
+      await seed(env, `${POLLS}/p1`, { ...storedPoll, votes: { [MEM]: 'A' } });
+      await assertSucceeds(updateDoc(poll(MEM), { [`votes.${MEM}`]: 'B' }));
+    });
+
+    test('organizer cannot change createdBy', async () => {
+      await assertFails(updateDoc(poll(ORG), { createdBy: MEM }));
+    });
+
+    test('member cannot change the question', async () => {
+      await assertFails(updateDoc(poll(MEM), { question: 'Hacked' }));
+    });
+
+    test("member cannot set another user's vote", async () => {
+      await assertFails(updateDoc(poll(MEM), { [`votes.${ORG}`]: 'A' }));
+    });
+
+    test('member cannot vote for an option not in the poll', async () => {
+      await assertFails(updateDoc(poll(MEM), { [`votes.${MEM}`]: 'C' }));
+    });
+
+    test('non-member cannot vote', async () => {
+      await assertFails(updateDoc(poll(OUT), { [`votes.${OUT}`]: 'A' }));
+    });
+  });
+
+  describe('delete', () => {
+    test('organizer cannot delete', async () => {
+      await assertFails(deleteDoc(poll(ORG)));
+    });
+
+    test('member cannot delete', async () => {
+      await assertFails(deleteDoc(poll(MEM)));
+    });
   });
 });

@@ -38,8 +38,50 @@ service cloud.firestore {
       // TODO(Marina): rules for the itinerary subcollections.
 
       // ---- polls (Ella, Story 7) ----
+      // Fields: question, options, votes {userId: option}, createdBy,
+      // createdAt. See features/voting/data/firestore_poll_repository.dart.
       match /polls/{pollId} {
+        function pollFields() {
+          return ['question', 'options', 'votes', 'createdBy', 'createdAt'];
+        }
+
+        function validPoll(data) {
+          return data.question is string && data.question.size() > 0
+            && data.options is list && data.options.size() >= 2
+            && data.votes is map;
+        }
+
+        // Only these keys change between the stored poll and the write.
+        function changesOnly(keys) {
+          return request.resource.data.diff(resource.data)
+            .affectedKeys().hasOnly(keys);
+        }
+
         allow read: if isMember(tripId);
+
+        // Organizer posts a poll: exact fields, no votes yet, server time.
+        allow create: if isOrganizer(tripId)
+          && request.resource.data.keys().hasOnly(pollFields())
+          && request.resource.data.keys().hasAll(pollFields())
+          && validPoll(request.resource.data)
+          && request.resource.data.votes.size() == 0
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.createdAt == request.time;
+
+        // Organizer edits the poll (question, options, votes) or votes.
+        // A member only sets their own vote, to an option the poll has.
+        allow update: if (isOrganizer(tripId)
+            && changesOnly(['question', 'options', 'votes'])
+            && validPoll(request.resource.data))
+          || (isMember(tripId)
+            && changesOnly(['votes'])
+            && request.resource.data.votes.diff(resource.data.votes)
+                 .affectedKeys().hasOnly([request.auth.uid])
+            && request.resource.data.votes[request.auth.uid]
+                 in resource.data.options);
+
+        // The app has no delete.
+        allow delete: if false;
       }
     }
   }
