@@ -51,6 +51,10 @@ describe('expenses', () => {
     test('non-member cannot read', async () => {
       await assertFails(getDoc(expense(OUT)));
     });
+
+    test('signed-out user cannot read', async () => {
+      await assertFails(getDoc(expense(null)));
+    });
   });
 
   describe('create', () => {
@@ -85,6 +89,15 @@ describe('expenses', () => {
     test('cannot add an extra field', async () => {
       await assertFails(addDoc(expenses(MEM), newExpense({ settled: true })));
     });
+
+    test('signed-out user cannot add', async () => {
+      await assertFails(addDoc(expenses(null), newExpense()));
+    });
+
+    test('all fields are required', async () => {
+      const { paidByName, ...withoutName } = newExpense();
+      await assertFails(addDoc(expenses(MEM), withoutName));
+    });
   });
 
   describe('update', () => {
@@ -104,6 +117,19 @@ describe('expenses', () => {
 
     test('payer cannot set the amount to 0', async () => {
       await assertFails(updateDoc(expense(MEM), { amountInCents: 0 }));
+    });
+
+    test('payer cannot empty the description', async () => {
+      await assertFails(updateDoc(expense(MEM), { description: '' }));
+    });
+
+    test('payer cannot change paidByName or createdAt', async () => {
+      await assertFails(updateDoc(expense(MEM), { paidByName: 'Someone else' }));
+      await assertFails(updateDoc(expense(MEM), { createdAt: Timestamp.now() }));
+    });
+
+    test('non-member cannot edit', async () => {
+      await assertFails(updateDoc(expense(OUT), { amountInCents: 1 }));
     });
   });
 

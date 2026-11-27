@@ -45,9 +45,42 @@ service cloud.firestore {
           return ['question', 'options', 'votes', 'createdBy', 'createdAt'];
         }
 
+        // Option i is a non-empty string, or the list is shorter than i + 1.
+        function okOption(options, i) {
+          return options.size() <= i
+            || (options[i] is string && options[i].size() > 0);
+        }
+
+        // The app reads options as List<String>, so a wrong type here would
+        // break the poll list for the whole trip. Rules have no loops, so
+        // each index is checked by hand, which caps polls at 20 options.
+        // Vote values can't be type-checked the same way; only the
+        // organizer can write arbitrary votes (members are limited below).
         function validPoll(data) {
           return data.question is string && data.question.size() > 0
-            && data.options is list && data.options.size() >= 2
+            && data.options is list
+            && data.options.size() >= 2 && data.options.size() <= 20
+            && data.options.toSet().size() == data.options.size()
+            && okOption(data.options, 0)
+            && okOption(data.options, 1)
+            && okOption(data.options, 2)
+            && okOption(data.options, 3)
+            && okOption(data.options, 4)
+            && okOption(data.options, 5)
+            && okOption(data.options, 6)
+            && okOption(data.options, 7)
+            && okOption(data.options, 8)
+            && okOption(data.options, 9)
+            && okOption(data.options, 10)
+            && okOption(data.options, 11)
+            && okOption(data.options, 12)
+            && okOption(data.options, 13)
+            && okOption(data.options, 14)
+            && okOption(data.options, 15)
+            && okOption(data.options, 16)
+            && okOption(data.options, 17)
+            && okOption(data.options, 18)
+            && okOption(data.options, 19)
             && data.votes is map;
         }
 

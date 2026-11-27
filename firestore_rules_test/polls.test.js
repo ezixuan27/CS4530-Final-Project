@@ -89,6 +89,41 @@ describe('polls', () => {
     test('organizer cannot create with an extra field', async () => {
       await assertFails(addDoc(polls(ORG), newPoll({ closed: true })));
     });
+
+    // The app parses options as List<String>; anything else would break
+    // the poll list for the whole trip.
+    test('options must be non-empty strings', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ options: [1, 2] })));
+      await assertFails(addDoc(polls(ORG), newPoll({ options: ['A', null] })));
+      await assertFails(addDoc(polls(ORG), newPoll({ options: ['A', ''] })));
+    });
+
+    test('options must be different', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ options: ['A', 'A'] })));
+    });
+
+    test('up to 20 options are allowed', async () => {
+      const options = Array.from({ length: 20 }, (_, i) => `Option ${i + 1}`);
+      await assertSucceeds(addDoc(polls(ORG), newPoll({ options })));
+    });
+
+    test('more than 20 options are denied', async () => {
+      const options = Array.from({ length: 21 }, (_, i) => `Option ${i + 1}`);
+      await assertFails(addDoc(polls(ORG), newPoll({ options })));
+    });
+
+    test('createdAt must be the server time', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ createdAt: Timestamp.now() })));
+    });
+
+    test('question cannot be empty', async () => {
+      await assertFails(addDoc(polls(ORG), newPoll({ question: '' })));
+    });
+
+    test('all fields are required', async () => {
+      const { votes, ...withoutVotes } = newPoll();
+      await assertFails(addDoc(polls(ORG), withoutVotes));
+    });
   });
 
   describe('update', () => {
@@ -119,6 +154,16 @@ describe('polls', () => {
 
     test('organizer cannot change createdBy', async () => {
       await assertFails(updateDoc(poll(ORG), { createdBy: MEM }));
+    });
+
+    test('organizer cannot change createdAt', async () => {
+      await assertFails(updateDoc(poll(ORG), { createdAt: Timestamp.now() }));
+    });
+
+    test('organizer edit must keep a valid poll', async () => {
+      await assertFails(updateDoc(poll(ORG), { options: ['A'] }));
+      await assertFails(updateDoc(poll(ORG), { options: [1, 2] }));
+      await assertFails(updateDoc(poll(ORG), { question: '' }));
     });
 
     test('member cannot change the question', async () => {
