@@ -38,6 +38,9 @@ class FirebaseAuthService extends AuthService {
     final user = credential.user!;
     await user.updateDisplayName(name.trim());
     await user.reload();
+    // The sign-in token was issued before the name was set. Refresh it so
+    // Firestore rules see the name right away (expenses check paidByName).
+    await user.getIdToken(true);
   });
 
   @override

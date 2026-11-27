@@ -30,8 +30,15 @@ export function seedTrip(env, tripId, { organizerId, memberIds }) {
   return seed(env, `trips/${tripId}`, { name: 'Rome', organizerId, memberIds });
 }
 
-/** A Firestore client signed in as [uid], or signed out when uid is null. */
-export function as(env, uid) {
-  const ctx = uid == null ? env.unauthenticatedContext() : env.authenticatedContext(uid);
+/** Display names on each test user's sign-in token (Firebase Auth `name`). */
+export const NAMES = { [ORG]: 'Olivia', [MEM]: 'Mia', [OUT]: 'Oscar' };
+
+/**
+ * A Firestore client signed in as [uid], or signed out when uid is null.
+ * [token] overrides the sign-in token claims; by default the user has the
+ * display name from NAMES.
+ */
+export function as(env, uid, token = { name: NAMES[uid] }) {
+  const ctx = uid == null ? env.unauthenticatedContext() : env.authenticatedContext(uid, token);
   return ctx.firestore();
 }

@@ -96,6 +96,7 @@ describe('polls', () => {
       await assertFails(addDoc(polls(ORG), newPoll({ options: [1, 2] })));
       await assertFails(addDoc(polls(ORG), newPoll({ options: ['A', null] })));
       await assertFails(addDoc(polls(ORG), newPoll({ options: ['A', ''] })));
+      await assertFails(addDoc(polls(ORG), newPoll({ options: ['A', '   '] })));
     });
 
     test('options must be different', async () => {
@@ -118,6 +119,7 @@ describe('polls', () => {
 
     test('question cannot be empty', async () => {
       await assertFails(addDoc(polls(ORG), newPoll({ question: '' })));
+      await assertFails(addDoc(polls(ORG), newPoll({ question: '   ' })));
     });
 
     test('all fields are required', async () => {
@@ -164,6 +166,8 @@ describe('polls', () => {
       await assertFails(updateDoc(poll(ORG), { options: ['A'] }));
       await assertFails(updateDoc(poll(ORG), { options: [1, 2] }));
       await assertFails(updateDoc(poll(ORG), { question: '' }));
+      await assertFails(updateDoc(poll(ORG), { question: '   ' }));
+      await assertFails(updateDoc(poll(ORG), { options: ['A', ' '] }));
     });
 
     test('member cannot change the question', async () => {

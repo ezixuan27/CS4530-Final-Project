@@ -10,7 +10,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from 'firebase/firestore';
-import { MEM, ORG, OUT, TRIP, as, seed, seedTrip, setup } from './helpers.js';
+import { MEM, NAMES, ORG, OUT, TRIP, as, seed, seedTrip, setup } from './helpers.js';
 
 const env = await setup();
 after(() => env.cleanup());
@@ -18,14 +18,14 @@ after(() => env.cleanup());
 const EXPENSES = `trips/${TRIP}/expenses`;
 
 const expense = (uid) => doc(as(env, uid), `${EXPENSES}/e1`);
-const expenses = (uid) => collection(as(env, uid), EXPENSES);
+const expenses = (uid, token) => collection(as(env, uid, token), EXPENSES);
 
 /** What ExpenseRepository.addExpense writes for MEM, with overrides. */
 const newExpense = (overrides = {}) => ({
   description: 'Dinner',
   amountInCents: 3050,
   paidBy: MEM,
-  paidByName: 'Mia',
+  paidByName: NAMES[MEM],
   createdAt: serverTimestamp(),
   ...overrides,
 });
@@ -63,7 +63,22 @@ describe('expenses', () => {
     });
 
     test('non-member cannot add', async () => {
-      await assertFails(addDoc(expenses(OUT), newExpense({ paidBy: OUT })));
+      await assertFails(addDoc(expenses(OUT), newExpense({ paidBy: OUT, paidByName: NAMES[OUT] })));
+    });
+
+    // The app shows "Paid by <paidByName>", taken from the signed-in account
+    // (displayName, or email when there is none). The rules check it too.
+    test("payer name must be the signed-in user's name", async () => {
+      await assertFails(addDoc(expenses(MEM), newExpense({ paidByName: NAMES[ORG] })));
+      await assertFails(addDoc(expenses(MEM), newExpense({ paidByName: '' })));
+    });
+
+    test('payer name falls back to email when the account has no name', async () => {
+      const token = { email: 'mia@example.com' };
+      await assertSucceeds(
+        addDoc(expenses(MEM, token), newExpense({ paidByName: 'mia@example.com' })),
+      );
+      await assertFails(addDoc(expenses(MEM, token), newExpense({ paidByName: 'Mia' })));
     });
 
     test('cannot record someone else as the payer', async () => {

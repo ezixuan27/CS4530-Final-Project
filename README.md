@@ -88,7 +88,7 @@ Firestore is still in test mode (open to anyone, expires around Dec 21). Real ru
 | Section | Owner | Status |
 |---|---|---|
 | Helpers `isMember(tripId)`, `isOrganizer(tripId)` | (shared) | done, same logic as `Trip.roleOf` |
-| `polls`, `expenses` | Ella | done, tested |
+| `polls`, `expenses` | Ella | done, tested. `paidByName` must equal the signed-in account's name (displayName, else email), so register refreshes the sign-in token after setting the name |
 | `trips`, `inviteCodes` | Rose | TODO: non-members read `inviteCodes/{code}`, users add only themselves to `memberIds` |
 | itinerary, suggestions | Marina | TODO |
 

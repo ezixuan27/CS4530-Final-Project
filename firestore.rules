@@ -45,10 +45,11 @@ service cloud.firestore {
           return ['question', 'options', 'votes', 'createdBy', 'createdAt'];
         }
 
-        // Option i is a non-empty string, or the list is shorter than i + 1.
+        // Option i is a string that isn't blank, or the list is shorter
+        // than i + 1.
         function okOption(options, i) {
           return options.size() <= i
-            || (options[i] is string && options[i].size() > 0);
+            || (options[i] is string && options[i].trim().size() > 0);
         }
 
         // The app reads options as List<String>, so a wrong type here would
@@ -57,7 +58,7 @@ service cloud.firestore {
         // Vote values can't be type-checked the same way; only the
         // organizer can write arbitrary votes (members are limited below).
         function validPoll(data) {
-          return data.question is string && data.question.size() > 0
+          return data.question is string && data.question.trim().size() > 0
             && data.options is list
             && data.options.size() >= 2 && data.options.size() <= 20
             && data.options.toSet().size() == data.options.size()
@@ -132,15 +133,23 @@ service cloud.firestore {
             && data.amountInCents is int && data.amountInCents > 0;
         }
 
+        // The signed-in account's name, as the app shows it
+        // (AppUser.name = displayName ?? email).
+        function accountName() {
+          return request.auth.token.get('name',
+            request.auth.token.get('email', ''));
+        }
+
         allow read: if isMember(tripId);
 
-        // Any member adds an expense they paid, stamped with server time.
+        // Any member adds an expense they paid, under their own account
+        // name, stamped with server time.
         allow create: if isMember(tripId)
           && request.resource.data.keys().hasOnly(expenseFields())
           && request.resource.data.keys().hasAll(expenseFields())
           && validExpense(request.resource.data)
           && request.resource.data.paidBy == request.auth.uid
-          && request.resource.data.paidByName is string
+          && request.resource.data.paidByName == accountName()
           && request.resource.data.createdAt == request.time;
 
         // Only the payer edits, and only the description and amount.
