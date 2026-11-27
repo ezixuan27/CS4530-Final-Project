@@ -72,7 +72,7 @@ inviteCodes/{code}                    tripId    # lets a non-member turn a code 
 
 If you add a trip by hand in the console, also add a doc to `inviteCodes` (the code as the ID, with a `tripId` field), otherwise no one can join it with the code.
 
-Firestore is still in test mode (open to anyone, expires around Dec 21). Next step: real rules now that sign in works.
+Firestore stays in test mode (open to anyone) until **Feb 1, 2027**, which is after the Dec 14 deadline. We're not writing security rules: the brief doesn't require them, and roles are enforced in the app. If test mode expires, every read and write is denied. To extend it, change the date in Firebase Console → Firestore Database → Rules, then **Publish**.
 
 **Testing with sign in:**
 - `TripSyncApp()` and `InMemoryAuthService()` start signed in as `AuthService.testUser` (`u1`), so the app opens on My Trips and your ViewModels get a user.
@@ -172,7 +172,7 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 
 **Shared with backend.**
 - [ ] `FirestoreItineraryRepository` with live updates
-- [ ] Firestore rules: only the organizer can edit the itinerary and approve or decline
+- ~~Firestore rules: only the organizer can edit the itinerary and approve or decline~~ Not needed (see Firebase above); the app's role checks cover this
 
 ### Ella · Polls and expenses
 
@@ -190,6 +190,6 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 
 **Shared with backend.**
 - [x] `FirestorePollRepository`, `FirestoreExpenseRepository` with live updates
-- [ ] Firestore rules: only the organizer posts and edits polls. Members of the trip can vote and add expenses. Only the payer edits an expense.
+- ~~Firestore rules: only the organizer posts and edits polls. Members of the trip can vote and add expenses. Only the payer edits an expense.~~ Not needed (see Firebase above); the app's role checks cover this
 
 Shared files (`routes.dart`, `models/`, `data/`): keep changes small and mention them in your PR.
