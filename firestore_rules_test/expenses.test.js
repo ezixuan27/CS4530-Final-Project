@@ -82,6 +82,10 @@ describe('expenses', () => {
       await assertFails(addDoc(expenses(MEM), newExpense({ description: '' })));
     });
 
+    test('description cannot be only spaces', async () => {
+      await assertFails(addDoc(expenses(MEM), newExpense({ description: '   ' })));
+    });
+
     test('createdAt must be the server time', async () => {
       await assertFails(addDoc(expenses(MEM), newExpense({ createdAt: Timestamp.now() })));
     });
@@ -121,6 +125,7 @@ describe('expenses', () => {
 
     test('payer cannot empty the description', async () => {
       await assertFails(updateDoc(expense(MEM), { description: '' }));
+      await assertFails(updateDoc(expense(MEM), { description: '   ' }));
     });
 
     test('payer cannot change paidByName or createdAt', async () => {

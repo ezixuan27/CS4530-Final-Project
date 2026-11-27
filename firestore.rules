@@ -127,7 +127,8 @@ service cloud.firestore {
         }
 
         function validExpense(data) {
-          return data.description is string && data.description.size() > 0
+          // trim() so a description of only spaces is rejected, like the app.
+          return data.description is string && data.description.trim().size() > 0
             && data.amountInCents is int && data.amountInCents > 0;
         }
 
