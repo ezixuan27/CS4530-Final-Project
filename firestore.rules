@@ -83,6 +83,42 @@ service cloud.firestore {
         // The app has no delete.
         allow delete: if false;
       }
+
+      // ---- expenses (Ella, Story 8) ----
+      // Fields: description, amountInCents, paidBy, paidByName, createdAt.
+      // See features/expenses/data/firestore_expense_repository.dart.
+      match /expenses/{expenseId} {
+        function expenseFields() {
+          return ['description', 'amountInCents', 'paidBy', 'paidByName',
+                  'createdAt'];
+        }
+
+        function validExpense(data) {
+          return data.description is string && data.description.size() > 0
+            && data.amountInCents is int && data.amountInCents > 0;
+        }
+
+        allow read: if isMember(tripId);
+
+        // Any member adds an expense they paid, stamped with server time.
+        allow create: if isMember(tripId)
+          && request.resource.data.keys().hasOnly(expenseFields())
+          && request.resource.data.keys().hasAll(expenseFields())
+          && validExpense(request.resource.data)
+          && request.resource.data.paidBy == request.auth.uid
+          && request.resource.data.paidByName is string
+          && request.resource.data.createdAt == request.time;
+
+        // Only the payer edits, and only the description and amount.
+        allow update: if isMember(tripId)
+          && resource.data.paidBy == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['description', 'amountInCents'])
+          && validExpense(request.resource.data);
+
+        // The app has no delete.
+        allow delete: if false;
+      }
     }
   }
 }

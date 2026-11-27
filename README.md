@@ -72,12 +72,35 @@ inviteCodes/{code}                    tripId    # lets a non-member turn a code 
 
 If you add a trip by hand in the console, also add a doc to `inviteCodes` (the code as the ID, with a `tripId` field), otherwise no one can join it with the code.
 
-Firestore is still in test mode (open to anyone, expires around Dec 21). Next step: real rules now that sign in works.
+Firestore is still in test mode (open to anyone, expires around Dec 21). Real rules are being written in `firestore.rules` (see "Firestore rules" below).
 
 **Testing with sign in:**
 - `TripSyncApp()` and `InMemoryAuthService()` start signed in as `AuthService.testUser` (`u1`), so the app opens on My Trips and your ViewModels get a user.
 - `InMemoryAuthService.signedOut()` starts signed out, e.g. `TripSyncApp(auth: InMemoryAuthService.signedOut())`. The test user's password is `InMemoryAuthService.testPassword`; `signInAsTestUser(tester)` in `test/test_helpers.dart` fills in the form.
 - Signed out, every screen except Sign In and Register shows Sign In instead (`Routes.public` in `routes.dart`). If you add a screen people should reach without an account, add it there.
+
+### Firestore rules
+
+`firestore.rules` (repo root) decides who can read and write what. The app's own checks (e.g. "only the organizer creates polls") can be bypassed by anyone calling Firestore directly; the rules can't.
+
+**Not published yet.** Rules are OR-ed: while the test-mode rule ("allow everything until Dec 21") is live, ours change nothing. Publishing only part of the file would block everything without a rule (e.g. reading `trips`) and break the app. Once every section is written and tested, one person pastes the whole file into Firebase Console → Firestore Database → Rules and clicks **Publish**, replacing the test-mode rule.
+
+| Section | Owner | Status |
+|---|---|---|
+| Helpers `isMember(tripId)`, `isOrganizer(tripId)` | (shared) | done, same logic as `Trip.roleOf` |
+| `polls`, `expenses` | Ella | done, tested |
+| `trips`, `inviteCodes` | Rose | TODO: non-members read `inviteCodes/{code}`, users add only themselves to `memberIds` |
+| itinerary, suggestions | Marina | TODO |
+
+**Run the tests** (Firestore emulator + Node; no Firebase login needed):
+```sh
+cd firestore_rules_test
+npm install            # once
+JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" npm test
+```
+The emulator needs Java. Android Studio ships one; the `JAVA_HOME` above points at it (or use any JDK 21+ you already have on your `PATH`).
+
+**Adding your section:** add a `match` block inside `match /trips/{tripId}` (or next to it for top-level collections), reuse `isMember` / `isOrganizer`, and add a `<x>.test.js` file in `firestore_rules_test/` (copy `polls.test.js`). Test both what should be allowed and what should be denied: a rule that denies everything also passes the "denied" tests. Write test data the same way your Firestore repository does (e.g. `serverTimestamp()` for `createdAt`), so the rules are checked against what the app really sends.
 
 ### Adding your Firestore repository
 
@@ -191,5 +214,6 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 **Shared with backend.**
 - [x] `FirestorePollRepository`, `FirestoreExpenseRepository` with live updates
 - [ ] Firestore rules: only the organizer posts and edits polls. Members of the trip can vote and add expenses. Only the payer edits an expense.
+  - Progress: polls + expenses rules written and tested in `firestore.rules`; publish pending (see "Firestore rules").
 
 Shared files (`routes.dart`, `models/`, `data/`): keep changes small and mention them in your PR.
