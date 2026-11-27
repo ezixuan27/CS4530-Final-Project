@@ -70,6 +70,8 @@ inviteCodes/{code}                    tripId    # lets a non-member turn a code 
 
 **Sign in:** the app uses Firebase Auth (email + password). Accounts show up in the Firebase console under **Authentication → Users**, and each user's id there is what goes in `memberIds` / `organizerId`. Data made before sign in existed (e.g. trips added by hand with `memberIds: ["u1"]`) won't show up for real accounts; add your **User UID** to `memberIds` in the console if you need it.
 
+If you add a trip by hand in the console, also add a doc to `inviteCodes` (the code as the ID, with a `tripId` field), otherwise no one can join it with the code.
+
 Firestore is still in test mode (open to anyone, expires around Dec 21). Next step: real rules now that sign in works.
 
 **Testing with sign in:**
@@ -142,7 +144,7 @@ Listening is cheap. Firestore bills per document *read*, not per minute: the fir
 
 **Story 3 · Join a trip.** *Purpose:* invited friends get into the group's plan with just the code.
 - Enter a code, then join and land in the trip. Unknown code shows an error. Joining twice is harmless.
-- [ ] `JoinTripViewModel` + view, using `TripRepository.joinTrip`
+- [x] `JoinTripViewModel` + view, using `TripRepository.joinTrip`
 
 **Story 6 · Reopen the plan (My Trips).** *Purpose:* next morning, a member finds their trip again without scrolling the group chat.
 - List of the user's trips. Tapping one opens that trip's itinerary (built by B) with the real `tripId`.
