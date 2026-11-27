@@ -49,3 +49,6 @@ app.*.map.json
 
 # Local AI planning notes
 docs/superpowers/
+
+# Firestore rules tests (Node)
+firestore_rules_test/node_modules/

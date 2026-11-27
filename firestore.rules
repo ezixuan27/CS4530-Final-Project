@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// TripSync Firestore security rules.
+// Tests: firestore_rules_test/ (see README, "Firestore rules").
+// NOT published yet: publish once every section below is written.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Shared helpers ----
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function tripData(tripId) {
+      return get(/databases/$(database)/documents/trips/$(tripId)).data;
+    }
+
+    // Same as Trip.roleOf in the app: the organizer counts as a member
+    // even if memberIds doesn't list them.
+    function isOrganizer(tripId) {
+      return signedIn() && tripData(tripId).organizerId == request.auth.uid;
+    }
+
+    function isMember(tripId) {
+      return signedIn()
+        && (tripData(tripId).organizerId == request.auth.uid
+            || request.auth.uid in tripData(tripId).memberIds);
+    }
+
+    // ---- trips, inviteCodes (Rose) ----
+    // TODO(Rose): rules for trips/{tripId} and inviteCodes/{code}.
+
+    match /trips/{tripId} {
+
+      // ---- itinerary, suggestions (Marina) ----
+      // TODO(Marina): rules for the itinerary subcollections.
+
+      // ---- polls (Ella, Story 7) ----
+      match /polls/{pollId} {
+        allow read: if isMember(tripId);
+      }
+    }
+  }
+}
